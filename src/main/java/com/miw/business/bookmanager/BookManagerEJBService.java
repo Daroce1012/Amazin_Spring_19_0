@@ -53,4 +53,22 @@ public class BookManagerEJBService implements BookManagerService {
 	{
 		return bookManager.newBook(book, family);
 	}
+	
+	@Override
+	public Book getBookById(int id) throws Exception {
+		printMessage("*** BookManagerEJBService.getBookById(" + id + ");");
+		return bookManager.getBookById(id);
+	}
+	
+	@Override
+	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+		printMessage("*** BookManagerEJBService.checkStockAvailability();");
+		return bookManager.checkStockAvailability(bookId, requestedQuantity);
+	}
+	
+	@Override
+	public boolean reduceStock(int bookId, int quantity) throws Exception {
+		printMessage("*** BookManagerEJBService.reduceStock();");
+		return bookManager.reduceStock(bookId, quantity);
+	}
 }

@@ -22,6 +22,11 @@
 		</property>
 	</bean>
 	
+	<!-- Cart Manager -->
+	<bean id="cartManagerService" class="com.miw.business.cartmanager.CartManager">
+		<property name="bookManagerService" ref="bookManagerService"/>
+	</bean>
+	
 	<!-- Persistence services implementation -->
 	<bean id="bookDataService" class="com.miw.persistence.book.BookDAO"/> 
 	<bean id="ivaDataService" class="com.miw.persistence.vat.VATDAO"/> 

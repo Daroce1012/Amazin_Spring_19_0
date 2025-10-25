@@ -65,4 +65,30 @@ public class BookManager implements BookManagerService {
 		book.setVat(this.ivaDataService.getVAT(family));
 		return this.bookDataService.newBook(book);
 	}
+	
+	@Override
+	public Book getBookById(int id) throws Exception {
+		logger.debug("Getting book by id: " + id);
+		Book book = bookDataService.getBookById(id);
+		
+		if (book != null) {
+			// Calculamos el precio con IVA y descuentos
+			book.setPrice(book.getBasePrice() * (1 + book.getVat().getValue()) 
+				* discounts.get(book.getVat().getTaxGroup()));
+		}
+		
+		return book;
+	}
+	
+	@Override
+	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+		logger.debug("Checking stock for book " + bookId + ": " + requestedQuantity + " units");
+		return bookDataService.checkStockAvailability(bookId, requestedQuantity);
+	}
+	
+	@Override
+	public boolean reduceStock(int bookId, int quantity) throws Exception {
+		logger.debug("Reducing stock for book " + bookId + ": " + quantity + " units");
+		return bookDataService.reduceStock(bookId, quantity);
+	}
 }

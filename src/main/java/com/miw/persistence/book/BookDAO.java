@@ -96,4 +96,57 @@ public class BookDAO implements BookDataService  {
 			dba.closeEm();
 		}
 	}
+	
+	@Override
+	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+		Dba dba = new Dba();
+		try {
+			EntityManager em = dba.getActiveEm();
+			Book book = em.find(Book.class, bookId);
+			
+			if (book != null) {
+				boolean available = book.getStock() >= requestedQuantity;
+				logger.debug("Stock check for book " + bookId + ": Requested=" + requestedQuantity + ", Available=" + book.getStock() + ", Result=" + available);
+				return available;
+			}
+			
+			logger.error("Book with ID " + bookId + " not found");
+			return false;
+
+		} finally {
+			// 100% sure that the transaction and entity manager will be closed
+			dba.closeEm();
+		}
+	}
+	
+	@Override
+	public boolean reduceStock(int bookId, int quantity) throws Exception {
+		Dba dba = new Dba();
+		try {
+			EntityManager em = dba.getActiveEm();
+			
+			// BLOQUEO PESIMISTA para evitar condiciones de carrera
+			Book book = em.find(Book.class, bookId, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+			
+			if (book != null && book.getStock() >= quantity) {
+				book.setStock(book.getStock() - quantity);
+				em.merge(book);
+				em.getTransaction().commit();
+				
+				logger.debug("Stock reduced for book: " + book.getTitle() + " - Quantity reduced: " + quantity + " - New stock: " + book.getStock());
+				return true;
+			}
+			
+			if (book != null) {
+				logger.error("Not enough stock for book " + bookId + ": Requested=" + quantity + ", Available=" + book.getStock());
+			} else {
+				logger.error("Book with ID " + bookId + " not found");
+			}
+			return false;
+
+		} finally {
+			// 100% sure that the transaction and entity manager will be closed
+			dba.closeEm();
+		}
+	}
 }

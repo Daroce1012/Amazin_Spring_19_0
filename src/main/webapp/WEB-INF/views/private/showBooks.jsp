@@ -22,10 +22,11 @@
 	</header>
 	<nav>
 		<ul>
-			<li><a href="menu">Start</a></li>
+			<li><a href="menu"><spring:message code="start"/></a></li>
 			<li><a href="newBook">Add New</a></li>
-			<li><a href="http://miw.uniovi.es">About</a></li>
-			<li><a href="mailto:dd@email.com">Contact</a></li>
+			<li><a href="viewCart"><spring:message code="cart.viewCart"/></a></li>
+			<li><a href="http://miw.uniovi.es"><spring:message code="about"/></a></li>
+			<li><a href="mailto:dd@email.com"><spring:message code="contact"/></a></li>
 		</ul>
 	</nav>
 	<section>
@@ -39,6 +40,7 @@
 						<th><spring:message code="book.description"/></th>
 						<th><spring:message code="book.price"/></th>
 						<th><spring:message code="book.stock"/></th>
+						<th><spring:message code="cart.addToCart"/></th>
 					</tr>
 				</thead>
 
@@ -50,6 +52,19 @@
 							<td><c:out value="${book.description}" /></td>
 							<td><c:out value="${book.price}" /> &euro;</td>
 							<td><c:out value="${book.stock}" /> <spring:message code="book.units"/></td>
+							<td>
+								<c:if test="${book.stock > 0}">
+									<form action="addToCart" method="post" style="display: inline;">
+										<input type="hidden" name="bookId" value="${book.id}" />
+										<input type="number" name="quantity" value="1" min="1" max="${book.stock}" style="width: 50px;" />
+										<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+										<input type="submit" value="<spring:message code='cart.addToCart'/>" />
+									</form>
+								</c:if>
+								<c:if test="${book.stock <= 0}">
+									<span style="color: red;"><spring:message code="cart.outOfStock"/></span>
+								</c:if>
+							</td>
 						</tr>						
 					</c:forEach>
 				</tbody>
