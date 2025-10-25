@@ -14,11 +14,6 @@ public class ShowSpecialOfferController {
 
 	@Autowired
 	private BookManagerService bookManagerService;
-	
-	public void setBookManagerService(BookManagerService bookManagerService) {
-		this.bookManagerService = bookManagerService;
-	}
-	
 
     @PreAuthorize("hasRole('ROLE_MANAGER')")
 	@RequestMapping ("private/showSpecialOffer")

@@ -75,31 +75,6 @@ public class BookDAO implements BookDataService  {
 		return book;
 	}
 
-	public void updateBookStock(int bookId, int newStock) throws Exception {
-		Dba dba = new Dba();
-		try {
-			EntityManager em = dba.getActiveEm();
-			Book book = em.find(Book.class, bookId, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-			
-			if (book != null) {
-				book.setStock(newStock);
-				em.merge(book);
-				
-				logger.debug("Stock updated for book: " + book.getTitle() + " - New stock: " + newStock);
-			} else {
-				logger.error("Book with ID " + bookId + " not found");
-				throw new Exception("Book with ID " + bookId + " not found");
-			}
-
-		} catch (Exception e) {
-			logger.error("Error updating stock for book " + bookId, e);
-			throw e;
-		} finally {
-			// 100% sure that the transaction and entity manager will be closed
-			dba.closeEm();
-		}
-	}
-	
 	@Override
 	public void increaseBookStock(int bookId, int quantity) throws Exception {
 		Dba dba = new Dba();

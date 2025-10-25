@@ -9,11 +9,11 @@
 
 
 	<!-- Declaramos nuestros beans -->
-	<bean id="bookManagerService" class="com.miw.business.bookmanager.BookManagerEJBService" autowire="byName"> 
+	<bean id="bookManagerService" class="com.miw.business.bookmanager.BookManagerEJBService"> 
 		<property name = "repetitions" value = "3" />
 	</bean>
 	 
-	<bean id="bookManager" class="com.miw.business.bookmanager.BookManager" autowire="byName"> 
+	<bean id="bookManager" class="com.miw.business.bookmanager.BookManager"> 
 		<property name="discounts">
 			<map>
 				<entry key="0" value="5" />
@@ -23,9 +23,10 @@
 	</bean>
 	
 	<!-- Cart Manager -->
-	<bean id="cartManagerService" class="com.miw.business.cartmanager.CartManager">
-		<property name="bookManagerService" ref="bookManagerService"/>
-	</bean>
+	<bean id="cartManagerService" class="com.miw.business.cartmanager.CartManager"/>
+	
+	<!-- Cart Session Service -->
+	<bean id="cartSessionService" class="com.miw.business.cartmanager.CartSessionService"/>
 	
 	<!-- Persistence services implementation -->
 	<bean id="bookDataService" class="com.miw.persistence.book.BookDAO"/> 
@@ -35,10 +36,7 @@
 	<bean id="reservationDataService" class="com.miw.persistence.reservation.ReservationDAO"/>
 	
 	<!-- Reservation Manager -->
-	<bean id="reservationManagerService" class="com.miw.business.reservationmanager.ReservationManager">
-		<property name="reservationDataService" ref="reservationDataService"/>
-		<property name="bookManagerService" ref="bookManagerService"/>
-	</bean>
+	<bean id="reservationManagerService" class="com.miw.business.reservationmanager.ReservationManager"/>
 	
 	<bean id="messageSource"
 	class="org.springframework.context.support.ResourceBundleMessageSource">

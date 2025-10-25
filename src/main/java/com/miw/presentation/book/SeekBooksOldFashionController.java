@@ -11,14 +11,10 @@ import com.miw.business.bookmanager.BookManagerService;
 
 public class SeekBooksOldFashionController extends AbstractController {
 
-		@Autowired
-		private BookManagerService bookManagerService;
-		
-		public void setBookManagerService(BookManagerService bookManagerService) {
-			this.bookManagerService = bookManagerService;
-		}
-		
-		@Override
+	@Autowired
+	private BookManagerService bookManagerService;
+	
+	@Override
 		protected ModelAndView handleRequestInternal(HttpServletRequest arg0,
 				HttpServletResponse arg1) throws Exception {
 	        System.out.println("Executing SeekBooksOldFashionController");

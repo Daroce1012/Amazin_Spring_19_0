@@ -3,6 +3,7 @@ package com.miw.business.bookmanager;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.logging.log4j.*;
 
 import com.miw.model.Book;
@@ -12,20 +13,11 @@ public class BookManagerEJBService implements BookManagerService {
 	Logger logger = LogManager.getLogger(this.getClass());
 	
 	private Integer repetitions = 1;
-	private BookManager bookManager=null;
+	
+	@Autowired
+	private BookManager bookManager;
 
-	public BookManager getBookManager() {
-		return bookManager;
-	}
-
-	public void setBookManager(BookManager bookManager) {
-		this.bookManager = bookManager;
-	}
-
-	public Integer getRepetitions() {
-		return repetitions;
-	}
-
+	// Setter solo para repetitions (se configura desde XML)
 	public void setRepetitions(Integer repetitions) {
 		this.repetitions = repetitions;
 	}

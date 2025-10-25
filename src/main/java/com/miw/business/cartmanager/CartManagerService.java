@@ -1,12 +1,12 @@
 package com.miw.business.cartmanager;
 
 import com.miw.model.Cart;
+import java.util.List;
+import com.miw.model.Reservation;
 
 public interface CartManagerService {
     void addBookToCart(Cart cart, int bookId, int quantity) throws Exception;
-    void reserveBook(Cart cart, int bookId, int quantity) throws Exception;
-    Cart getCart();
-    boolean checkout(Cart cart) throws Exception;
-    double calculateTotal(Cart cart);
     boolean reduceStockForPurchase(int bookId, int quantity) throws Exception;
+    void synchronizeCartWithReservations(Cart cart, List<Reservation> reservations);
+    boolean processNormalPurchases(Cart cart) throws Exception;
 }

@@ -16,16 +16,7 @@ import com.miw.model.Book;
 @RequestMapping("private/newBook")
 public class NewBookController {
 	@Autowired 
-	BookManagerService bookManagerService;
-	@Autowired
-	
-	public BookManagerService getBookManagerService() {
-		return bookManagerService;
-	}
-
-	public void setBookManagerService(BookManagerService bookManagerService) {
-		this.bookManagerService = bookManagerService;
-	}
+	private BookManagerService bookManagerService;
 	
 	@RequestMapping(method = RequestMethod.GET)
 	public void get()

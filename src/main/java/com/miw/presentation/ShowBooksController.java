@@ -12,10 +12,6 @@ public class ShowBooksController {
 
 	@Autowired
 	private BookManagerService bookManagerService;
-	
-	public void setBookManagerService(BookManagerService bookManagerService) {
-		this.bookManagerService = bookManagerService;
-	}
 
 	@RequestMapping("private/showBooks")
 	public String seekBooks(Model model) throws Exception {

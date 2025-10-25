@@ -1,26 +1,20 @@
 package com.miw.business.cartmanager;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.logging.log4j.*;
 import com.miw.model.Cart;
 import com.miw.model.Book;
 import com.miw.model.CartItem;
+import com.miw.model.Reservation;
 import com.miw.business.bookmanager.BookManagerService;
+import java.util.List;
 
 public class CartManager implements CartManagerService {
     
     Logger logger = LogManager.getLogger(this.getClass());
     
-    // Usar BookManagerService, NO BookDataService directamente
+    @Autowired
     private BookManagerService bookManagerService;
-    
-    // Getter y Setter para inyección de dependencias
-    public BookManagerService getBookManagerService() {
-        return bookManagerService;
-    }
-    
-    public void setBookManagerService(BookManagerService bookManagerService) {
-        this.bookManagerService = bookManagerService;
-    }
     
     @Override
     public void addBookToCart(Cart cart, int bookId, int quantity) throws Exception {
@@ -54,71 +48,73 @@ public class CartManager implements CartManagerService {
     }
     
     @Override
-    public Cart getCart() {
-        return new Cart(); // O recuperar de sesión
-    }
-    
-    @Override
-    public boolean checkout(Cart cart) throws Exception {
-        logger.debug("Processing checkout for cart with " + cart.getItems().size() + " items");
-        
-        boolean allSuccess = true;
-        
-        // Intentar reducir el stock de todos los items
-        for (CartItem item : cart.getItems()) {
-            boolean reduced = bookManagerService.reduceStock(
-                item.getBook().getId(), 
-                item.getQuantity()
-            );
-            
-            if (!reduced) {
-                logger.error("Failed to reduce stock for book: " + item.getBook().getTitle());
-                allSuccess = false;
-                // En producción, aquí deberías hacer rollback de los anteriores
-                break;
-            }
-        }
-        
-        if (allSuccess) {
-            cart.clear(); // Vaciar carrito tras compra exitosa
-            logger.debug("Checkout completed successfully");
-        }
-        
-        return allSuccess;
-    }
-    
-    @Override
-    public void reserveBook(Cart cart, int bookId, int quantity) throws Exception {
-        logger.debug("Reserving book " + bookId + ". Quantity: " + quantity);
-        
-        // 1. Obtener el libro con precio calculado
-        Book book = bookManagerService.getBookById(bookId);
-        
-        if (book == null) {
-            throw new Exception("cart.bookNotFound");
-        }
-        
-        // 2. Verificar stock disponible
-        if (!bookManagerService.checkStockAvailability(bookId, quantity)) {
-            throw new Exception("cart.notEnoughStock");
-        }
-        
-        // 3. Crear CartItem especial para reserva
-        CartItem reservationItem = new CartItem(book, quantity, true);
-        
-        // 4. Añadir al carrito
-        cart.getItems().add(reservationItem);
-        logger.debug("Book reserved and added to cart");
-    }
-    
-    @Override
-    public double calculateTotal(Cart cart) {
-        return cart.getTotal();
-    }
-    
-    @Override
     public boolean reduceStockForPurchase(int bookId, int quantity) throws Exception {
         logger.debug("Reducing stock for purchase: book " + bookId + ", quantity: " + quantity);
         return bookManagerService.reduceStock(bookId, quantity);
+    }
+    
+    @Override
+    public void synchronizeCartWithReservations(Cart cart, List<Reservation> reservations) {
+        logger.debug("Synchronizing cart with " + reservations.size() + " reservations");
+        
+        // 1. Eliminar del carrito reservas que ya no existen en BD
+        cart.getItems().removeIf(item -> {
+            if (item.isReserved()) {
+                boolean existsInDB = reservations.stream()
+                    .anyMatch(r -> r.getBook().getId() == item.getBookId());
+                return !existsInDB; // Eliminar si no existe en BD
+            }
+            return false;
+        });
+        
+        // 2. Agregar o actualizar reservas desde BD
+        for (Reservation res : reservations) {
+            CartItem existingItem = cart.getItems().stream()
+                .filter(item -> item.getBookId() == res.getBook().getId() && item.isReserved())
+                .findFirst()
+                .orElse(null);
+            
+            if (existingItem != null) {
+                // Actualizar cantidad desde BD (BD es la fuente de verdad)
+                existingItem.setQuantity(res.getQuantity());
+            } else {
+                // Añadir nueva reserva al carrito
+                CartItem item = new CartItem(res.getBook(), res.getQuantity(), true);
+                cart.getItems().add(item);
+            }
+        }
+        
+        logger.debug("Cart synchronized successfully");
+    }
+    
+    @Override
+    public boolean processNormalPurchases(Cart cart) throws Exception {
+        logger.debug("Processing normal purchases from cart");
+        
+        if (cart == null || cart.isEmpty()) {
+            return true; // Carrito vacío no es un error
+        }
+        
+        for (CartItem item : cart.getItems()) {
+            // Solo procesar items NO reservados
+            if (!item.isReserved()) {
+                try {
+                    boolean reduced = reduceStockForPurchase(
+                        item.getBookId(), 
+                        item.getQuantity()
+                    );
+                    
+                    if (!reduced) {
+                        logger.error("Failed to reduce stock for book: " + item.getBookId());
+                        return false;
+                    }
+                } catch (Exception e) {
+                    logger.error("Error processing item in checkout", e);
+                    return false;
+                }
+            }
+        }
+        
+        return true;
     }
 }

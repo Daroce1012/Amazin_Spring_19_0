@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpSession;
 import com.miw.business.cartmanager.CartManagerService;
+import com.miw.business.cartmanager.CartSessionService;
 import com.miw.business.reservationmanager.ReservationManagerService;
 import com.miw.model.Cart;
 import com.miw.model.CartItem;
@@ -28,11 +29,10 @@ public class CartController {
     private ReservationManagerService reservationManagerService;
     
     @Autowired
-    private ServletContext servletContext;
+    private CartSessionService cartSessionService;
     
-    public void setCartManagerService(CartManagerService cartManagerService) {
-        this.cartManagerService = cartManagerService;
-    }
+    @Autowired
+    private ServletContext servletContext;
     
     @RequestMapping("private/addToCart")
     public String addToCart(
@@ -43,16 +43,13 @@ public class CartController {
         
         try {
             // Obtener o crear carrito en sesión
-            Cart cart = (Cart) session.getAttribute("cart");
-            if (cart == null) {
-                cart = new Cart();
-            }
+            Cart cart = cartSessionService.getOrCreateCart(session);
             
             // Añadir libro al carrito
             cartManagerService.addBookToCart(cart, bookId, quantity);
             
             // Actualizar carrito en sesión
-            session.setAttribute("cart", cart);
+            cartSessionService.updateCart(session, cart);
             
             // Usar clave de internacionalización
             model.addAttribute("message", "cart.bookAddedSuccessfully");
@@ -60,11 +57,7 @@ public class CartController {
             
         } catch (Exception e) {
             // Asegurar que el carrito esté disponible en el modelo para mostrar el error
-            Cart cart = (Cart) session.getAttribute("cart");
-            if (cart == null) {
-                cart = new Cart();
-                session.setAttribute("cart", cart);
-            }
+            Cart cart = cartSessionService.getOrCreateCart(session);
             model.addAttribute("cart", cart);
             model.addAttribute("total", cart.getTotal());
             model.addAttribute("error", e.getMessage());
@@ -79,44 +72,16 @@ public class CartController {
             String username = principal.getName();
             
             // Obtener carrito de sesión
-            Cart cart = (Cart) session.getAttribute("cart");
-            if (cart == null) {
-                cart = new Cart();
-                session.setAttribute("cart", cart);
-            }
+            Cart cart = cartSessionService.getOrCreateCart(session);
             
-            // Sincronizar con reservas de BD
+            // Obtener reservas de BD
             List<Reservation> reservations = reservationManagerService.getReservations(username);
             
-            // Primero, eliminar del carrito reservas que ya no existen en BD
-            cart.getItems().removeIf(item -> {
-                if (item.isReserved()) {
-                    boolean existsInDB = reservations.stream()
-                        .anyMatch(r -> r.getBook().getId() == item.getBookId());
-                    return !existsInDB; // Eliminar si no existe en BD
-                }
-                return false;
-            });
-            
-            // Luego, agregar o actualizar reservas desde BD
-            for (Reservation res : reservations) {
-                CartItem existingItem = cart.getItems().stream()
-                    .filter(item -> item.getBookId() == res.getBook().getId() && item.isReserved())
-                    .findFirst()
-                    .orElse(null);
-                
-                if (existingItem != null) {
-                    // Actualizar cantidad desde BD (BD es la fuente de verdad)
-                    existingItem.setQuantity(res.getQuantity());
-                } else {
-                    // Añadir nueva reserva al carrito
-                    CartItem item = new CartItem(res.getBook(), res.getQuantity(), true);
-                    cart.getItems().add(item);
-                }
-            }
+            // Sincronizar usando servicio de negocio
+            cartManagerService.synchronizeCartWithReservations(cart, reservations);
             
             // Actualizar carrito en sesión después de sincronizar
-            session.setAttribute("cart", cart);
+            cartSessionService.updateCart(session, cart);
             
             model.addAttribute("cart", cart);
             model.addAttribute("total", cart.getTotal());
@@ -138,10 +103,7 @@ public class CartController {
         
         synchronized (servletContext) {
             try {
-                Cart cart = (Cart) session.getAttribute("cart");
-                if (cart == null) {
-                    return "redirect:viewCart";
-                }
+                Cart cart = cartSessionService.getOrCreateCart(session);
                 
                 // Buscar el item
                 CartItem itemToRemove = cart.getItems().stream()
@@ -160,15 +122,11 @@ public class CartController {
                         }
                     }
                     
-                    // Quitar del carrito solo el item específico (reserva o no)
-                    if (itemToRemove.isReserved()) {
-                        cart.removeReservedItem(bookId);
-                    } else {
-                        cart.removeNonReservedItem(bookId);
-                    }
+                    // Quitar del carrito usando servicio
+                    cartSessionService.removeItemFromCart(cart, bookId, itemToRemove.isReserved());
                     
                     // Actualizar carrito en sesión
-                    session.setAttribute("cart", cart);
+                    cartSessionService.updateCart(session, cart);
                     
                     model.addAttribute("message", "cart.itemRemoved");
                 }
@@ -187,9 +145,9 @@ public class CartController {
         
         synchronized (servletContext) {
             try {
-                Cart cart = (Cart) session.getAttribute("cart");
+                Cart cart = cartSessionService.getOrCreateCart(session);
                 
-                if (cart != null && !cart.isEmpty()) {
+                if (!cart.isEmpty()) {
                     String username = principal.getName();
                     
                     // Cancelar reservas antes de vaciar
@@ -203,12 +161,9 @@ public class CartController {
                     cart.clear();
                     
                     // Actualizar carrito en sesión
-                    session.setAttribute("cart", cart);
+                    cartSessionService.updateCart(session, cart);
                     
                     model.addAttribute("message", "cart.cartCleared");
-                } else {
-                    cart = new Cart();
-                    session.setAttribute("cart", cart);
                 }
                 
                 model.addAttribute("cart", cart);
@@ -233,12 +188,7 @@ public class CartController {
         synchronized (servletContext) {
             try {
                 String username = principal.getName();
-                Cart cart = (Cart) session.getAttribute("cart");
-                
-                if (cart == null) {
-                    model.addAttribute("error", "cart.empty");
-                    return "redirect:viewCart";
-                }
+                Cart cart = cartSessionService.getOrCreateCart(session);
                 
                 // Buscar el item en el carrito
                 CartItem itemToPurchase = cart.getItems().stream()
@@ -277,15 +227,11 @@ public class CartController {
                     logger.debug("Stock reduced for normal purchase");
                 }
                 
-                // Quitar el item del carrito
-                if (itemToPurchase.isReserved()) {
-                    cart.removeReservedItem(bookId);
-                } else {
-                    cart.removeNonReservedItem(bookId);
-                }
+                // Quitar el item del carrito usando servicio
+                cartSessionService.removeItemFromCart(cart, bookId, itemToPurchase.isReserved());
                 
                 // Actualizar carrito en sesión
-                session.setAttribute("cart", cart);
+                cartSessionService.updateCart(session, cart);
                 
                 model.addAttribute("message", "cart.itemPurchased");
                 return "redirect:viewCart";
@@ -301,9 +247,9 @@ public class CartController {
     @RequestMapping("private/checkout")
     public String checkout(Principal principal, HttpSession session, Model model) {
         
-        Cart cart = (Cart) session.getAttribute("cart");
+        Cart cart = cartSessionService.getOrCreateCart(session);
         
-        if (cart == null || cart.getItems().isEmpty()) {
+        if (cart.isEmpty()) {
             model.addAttribute("error", "cart.empty");
             return "private/viewCart";
         }
@@ -313,33 +259,16 @@ public class CartController {
         synchronized (servletContext) {
             try {
                 String username = principal.getName();
-                boolean allSuccess = true;
                 
-                for (CartItem item : cart.getItems()) {
-                    if (item.isReserved()) {
-                        // Es reserva: eliminar de BD (stock YA está reducido)
-                        Reservation res = reservationManagerService.getReservationByUserAndBook(username, item.getBookId());
-                        
-                        if (res != null) {
-                            reservationManagerService.purchaseReservation(res.getId());
-                        }
-                    } else {
-                        // Es compra normal: reducir stock
-                        boolean reduced = cartManagerService.reduceStockForPurchase(
-                            item.getBookId(), 
-                            item.getQuantity()
-                        );
-                        
-                        if (!reduced) {
-                            allSuccess = false;
-                            break;
-                        }
-                    }
-                }
+                // Procesar reservas usando servicio de negocio
+                reservationManagerService.processReservationsInCart(username, cart);
                 
-                if (allSuccess) {
+                // Procesar compras normales usando servicio de negocio
+                boolean success = cartManagerService.processNormalPurchases(cart);
+                
+                if (success) {
                     model.addAttribute("message", "cart.purchaseSuccess");
-                    session.removeAttribute("cart");
+                    cartSessionService.clearCart(session);
                     return "private/checkoutSuccess";
                 } else {
                     model.addAttribute("error", "cart.someItemsOutOfStock");

@@ -1,9 +1,12 @@
 package com.miw.business.reservationmanager;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.logging.log4j.*;
 import com.miw.business.bookmanager.BookManagerService;
 import com.miw.model.Book;
+import com.miw.model.Cart;
+import com.miw.model.CartItem;
 import com.miw.model.Reservation;
 import com.miw.persistence.reservation.ReservationDataService;
 
@@ -11,25 +14,11 @@ public class ReservationManager implements ReservationManagerService {
     
     Logger logger = LogManager.getLogger(this.getClass());
     
+    @Autowired
     private ReservationDataService reservationDataService;
+    
+    @Autowired
     private BookManagerService bookManagerService;
-    
-    // Getters y Setters para inyección de dependencias
-    public ReservationDataService getReservationDataService() {
-        return reservationDataService;
-    }
-    
-    public void setReservationDataService(ReservationDataService reservationDataService) {
-        this.reservationDataService = reservationDataService;
-    }
-    
-    public BookManagerService getBookManagerService() {
-        return bookManagerService;
-    }
-    
-    public void setBookManagerService(BookManagerService bookManagerService) {
-        this.bookManagerService = bookManagerService;
-    }
     
     @Override
     public Reservation createReservation(String username, int bookId, int quantity) throws Exception {
@@ -191,5 +180,21 @@ public class ReservationManager implements ReservationManagerService {
         
         logger.debug("Reservation quantity updated successfully. New quantity: " + newQuantity);
         return reservation;
+    }
+    
+    @Override
+    public boolean processReservationsInCart(String username, Cart cart) throws Exception {
+        logger.debug("Processing reservations in cart for user: " + username);
+        
+        for (CartItem item : cart.getItems()) {
+            if (item.isReserved()) {
+                Reservation res = getReservationByUserAndBook(username, item.getBookId());
+                if (res != null) {
+                    purchaseReservation(res.getId());
+                }
+            }
+        }
+        
+        return true;
     }
 }
