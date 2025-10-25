@@ -71,4 +71,10 @@ public class BookManagerEJBService implements BookManagerService {
 		printMessage("*** BookManagerEJBService.reduceStock();");
 		return bookManager.reduceStock(bookId, quantity);
 	}
+
+	@Override
+	public boolean increaseStock(int bookId, int quantity) throws Exception {
+		
+		return bookManager.increaseStock(bookId,quantity);
+	}
 }

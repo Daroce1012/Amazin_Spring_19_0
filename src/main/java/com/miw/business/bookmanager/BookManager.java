@@ -46,7 +46,7 @@ public class BookManager implements BookManagerService {
 		
 		// We calculate the final price with the VAT value
 		for (Book b : books) {
-			b.setPrice(b.getBasePrice() * (1 + b.getVat().getValue() )* discounts.get(b.getVat().getTaxGroup()));
+			b.setPrice(b.getBasePrice() * (1 + b.getVat().getValue()) * discounts.get(b.getVat().getTaxGroup()));
 		}
 		return books;
 	}
@@ -90,5 +90,20 @@ public class BookManager implements BookManagerService {
 	public boolean reduceStock(int bookId, int quantity) throws Exception {
 		logger.debug("Reducing stock for book " + bookId + ": " + quantity + " units");
 		return bookDataService.reduceStock(bookId, quantity);
+	}
+	
+	@Override
+	public boolean increaseStock(int bookId, int quantity) throws Exception {
+		logger.debug("Increasing stock for book " + bookId + ": " + quantity + " units");
+		
+		try {
+			// Llamar directamente al método atómico del DAO
+			bookDataService.increaseBookStock(bookId, quantity);
+			logger.debug("Stock increased successfully");
+			return true;
+		} catch (Exception e) {
+			logger.error("Failed to increase stock for book " + bookId, e);
+			return false;
+		}
 	}
 }

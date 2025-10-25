@@ -1,0 +1,94 @@
+package com.miw.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+public class Reservation {
+    
+    @Id 
+    @GeneratedValue
+    private int id;
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+    
+    private String username;
+    private int quantity;
+    private LocalDateTime reservationDate;
+    
+    // Constructor vacío para JPA
+    public Reservation() {
+        super();
+    }
+    
+    // Constructor simplificado
+    public Reservation(Book book, String username, int quantity) {
+        this.book = book;
+        this.username = username;
+        this.quantity = quantity;
+        this.reservationDate = LocalDateTime.now();
+    }
+    
+    // Getters y Setters
+    public int getId() {
+        return id;
+    }
+    
+    public void setId(int id) {
+        this.id = id;
+    }
+    
+    public Book getBook() {
+        return book;
+    }
+    
+    public void setBook(Book book) {
+        this.book = book;
+    }
+    
+    public String getUsername() {
+        return username;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public int getQuantity() {
+        return quantity;
+    }
+    
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+    
+    public LocalDateTime getReservationDate() {
+        return reservationDate;
+    }
+    
+    public void setReservationDate(LocalDateTime reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+    
+    // Métodos calculados dinámicamente
+    public double getReservationPrice() {
+        return book.getPrice() * quantity * 0.05; // 5% pagado
+    }
+    
+    public double getRemainingAmount() {
+        return book.getPrice() * quantity * 0.95; // 95% restante
+    }
+    
+    public double getTotalPrice() {
+        return book.getPrice() * quantity;
+    }
+    
+    @Override
+    public String toString() {
+        return "Reservation [id=" + id + ", book=" + book.getTitle() + 
+               ", username=" + username + ", quantity=" + quantity + 
+               ", reservationDate=" + reservationDate + "]";
+    }
+}

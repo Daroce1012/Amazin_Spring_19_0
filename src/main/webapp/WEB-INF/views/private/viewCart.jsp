@@ -25,6 +25,7 @@
 			<li><a href="menu"><spring:message code="start"/></a></li>
 			<li><a href="showBooks">Catalog</a></li>
 			<li><a href="newBook">Add New</a></li>
+			<li><a href="myReservations"><spring:message code="reservation.myReservations"/></a></li>
 			<li><a href="http://miw.uniovi.es"><spring:message code="about"/></a></li>
 			<li><a href="mailto:dd@email.com"><spring:message code="contact"/></a></li>
 		</ul>
@@ -54,28 +55,54 @@
 			<c:if test="${!cart.isEmpty()}">
 				<table>
 					<thead>
-						<tr>
-							<th><spring:message code="cart.title"/></th>
-							<th><spring:message code="cart.author"/></th>
-							<th><spring:message code="cart.unitPrice"/></th>
-							<th><spring:message code="cart.quantity"/></th>
-							<th><spring:message code="cart.subtotal"/></th>
-						</tr>
+					<tr>
+						<th><spring:message code="cart.title"/></th>
+						<th><spring:message code="cart.author"/></th>
+						<th><spring:message code="cart.type"/></th>
+						<th><spring:message code="cart.unitPrice"/></th>
+						<th><spring:message code="cart.quantity"/></th>
+						<th><spring:message code="cart.subtotal"/></th>
+						<th><spring:message code="cart.actions"/></th>
+					</tr>
 					</thead>
 					<tbody>
 						<c:forEach var='item' items="${cart.items}">
 							<tr>
 								<td><c:out value="${item.title}" /></td>
 								<td><c:out value="${item.author}" /></td>
+								<td>
+									<c:choose>
+										<c:when test="${item.reserved}">
+											<span style="color: orange; font-weight: bold;">
+												<spring:message code="cart.reservation"/> (95% <spring:message code="cart.pending"/>)
+											</span>
+										</c:when>
+										<c:otherwise>
+											<spring:message code="cart.purchase"/>
+										</c:otherwise>
+									</c:choose>
+								</td>
 								<td><c:out value="${item.unitPrice}" /> &euro;</td>
 								<td><c:out value="${item.quantity}" /></td>
 								<td><c:out value="${item.subtotal}" /> &euro;</td>
+							<td>
+								<form action="purchaseItem" method="post" style="display:inline; margin-right: 5px;">
+									<input type="hidden" name="bookId" value="${item.bookId}"/>
+									<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+									<input type="submit" value="<spring:message code='cart.buyItem'/>"/>
+								</form>
+								<form action="removeFromCart" method="post" style="display:inline;">
+									<input type="hidden" name="bookId" value="${item.bookId}"/>
+									<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+									<input type="submit" value="<spring:message code='cart.remove'/>"/>
+								</form>
+							</td>
 							</tr>
 						</c:forEach>
 					</tbody>
 					<tfoot>
 						<tr>
-							<td colspan="4"><strong><spring:message code="cart.total"/>:</strong></td>
+							<td colspan="6"><strong><spring:message code="cart.total"/>:</strong></td>
 							<td><strong><c:out value="${total}" /> &euro;</strong></td>
 						</tr>
 					</tfoot>

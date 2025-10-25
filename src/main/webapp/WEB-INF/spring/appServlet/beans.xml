@@ -31,6 +31,15 @@
 	<bean id="bookDataService" class="com.miw.persistence.book.BookDAO"/> 
 	<bean id="ivaDataService" class="com.miw.persistence.vat.VATDAO"/> 
 	
+	<!-- Reservation DAO -->
+	<bean id="reservationDataService" class="com.miw.persistence.reservation.ReservationDAO"/>
+	
+	<!-- Reservation Manager -->
+	<bean id="reservationManagerService" class="com.miw.business.reservationmanager.ReservationManager">
+		<property name="reservationDataService" ref="reservationDataService"/>
+		<property name="bookManagerService" ref="bookManagerService"/>
+	</bean>
+	
 	<bean id="messageSource"
 	class="org.springframework.context.support.ResourceBundleMessageSource">
 	<property name="basename" value="messages" />

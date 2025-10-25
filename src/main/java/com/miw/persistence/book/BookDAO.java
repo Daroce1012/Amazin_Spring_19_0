@@ -60,7 +60,7 @@ public class BookDAO implements BookDataService  {
 	public Book getBookById(int id) throws Exception {
 		Book book = null;
 
-		Dba dba = new Dba();
+		Dba dba = new Dba(true); // Solo lectura
 		try {
 			EntityManager em = dba.getActiveEm();
 			book = em.find(Book.class, id);
@@ -79,18 +79,21 @@ public class BookDAO implements BookDataService  {
 		Dba dba = new Dba();
 		try {
 			EntityManager em = dba.getActiveEm();
-			Book book = em.find(Book.class, bookId);
+			Book book = em.find(Book.class, bookId, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
 			
 			if (book != null) {
 				book.setStock(newStock);
 				em.merge(book);
-				em.getTransaction().commit();
 				
 				logger.debug("Stock updated for book: " + book.getTitle() + " - New stock: " + newStock);
 			} else {
 				logger.error("Book with ID " + bookId + " not found");
+				throw new Exception("Book with ID " + bookId + " not found");
 			}
 
+		} catch (Exception e) {
+			logger.error("Error updating stock for book " + bookId, e);
+			throw e;
 		} finally {
 			// 100% sure that the transaction and entity manager will be closed
 			dba.closeEm();
@@ -98,8 +101,36 @@ public class BookDAO implements BookDataService  {
 	}
 	
 	@Override
-	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+	public void increaseBookStock(int bookId, int quantity) throws Exception {
 		Dba dba = new Dba();
+		try {
+			EntityManager em = dba.getActiveEm();
+			// Usar bloqueo pesimista para evitar condiciones de carrera
+			Book book = em.find(Book.class, bookId, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+			
+			if (book != null) {
+				// Incrementar stock en una sola transacción atómica
+				int newStock = book.getStock() + quantity;
+				book.setStock(newStock);
+				em.merge(book);
+				
+				logger.debug("Stock increased for book: " + book.getTitle() + " - Quantity added: " + quantity + " - New stock: " + newStock);
+			} else {
+				logger.error("Book with ID " + bookId + " not found");
+				throw new Exception("Book with ID " + bookId + " not found");
+			}
+
+		} catch (Exception e) {
+			logger.error("Error increasing stock for book " + bookId, e);
+			throw e;
+		} finally {
+			dba.closeEm();
+		}
+	}
+	
+	@Override
+	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+		Dba dba = new Dba(true); // Solo lectura
 		try {
 			EntityManager em = dba.getActiveEm();
 			Book book = em.find(Book.class, bookId);
@@ -131,7 +162,6 @@ public class BookDAO implements BookDataService  {
 			if (book != null && book.getStock() >= quantity) {
 				book.setStock(book.getStock() - quantity);
 				em.merge(book);
-				em.getTransaction().commit();
 				
 				logger.debug("Stock reduced for book: " + book.getTitle() + " - Quantity reduced: " + quantity + " - New stock: " + book.getStock());
 				return true;
@@ -144,6 +174,9 @@ public class BookDAO implements BookDataService  {
 			}
 			return false;
 
+		} catch (Exception e) {
+			logger.error("Error reducing stock for book " + bookId, e);
+			throw e;
 		} finally {
 			// 100% sure that the transaction and entity manager will be closed
 			dba.closeEm();

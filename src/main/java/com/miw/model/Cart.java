@@ -11,21 +11,29 @@ public class Cart {
     }
     
     public void addItem(Book book, int quantity) {
-        // Buscar si el libro ya está en el carrito
+        // Buscar si el libro ya está en el carrito COMO COMPRA NORMAL (no reserva)
         for (CartItem item : items) {
-            if (item.getBook().getId() == book.getId()) {
-                // Si ya está, incrementar cantidad
+            if (item.getBook().getId() == book.getId() && !item.isReserved()) {
+                // Si ya está como compra normal, incrementar cantidad
                 item.setQuantity(item.getQuantity() + quantity);
                 return;
             }
         }
         
-        // Si no está, crear nuevo CartItem
-        items.add(new CartItem(book, quantity));
+        // Si no está, o solo está como reserva, crear nuevo CartItem (compra normal)
+        items.add(new CartItem(book, quantity, false));
     }
     
     public void removeItem(int bookId) {
-        items.removeIf(item -> item.getBook().getId() == bookId);
+        items.removeIf(item -> item.getBookId() == bookId);
+    }
+    
+    public void removeReservedItem(int bookId) {
+        items.removeIf(item -> item.getBookId() == bookId && item.isReserved());
+    }
+    
+    public void removeNonReservedItem(int bookId) {
+        items.removeIf(item -> item.getBookId() == bookId && !item.isReserved());
     }
     
     public void updateQuantity(int bookId, int newQuantity) {

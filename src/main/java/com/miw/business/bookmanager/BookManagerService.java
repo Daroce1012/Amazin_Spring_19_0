@@ -13,4 +13,7 @@ public interface BookManagerService {
 	public Book getBookById(int id) throws Exception;
 	public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception;
 	public boolean reduceStock(int bookId, int quantity) throws Exception;
+	
+	// NUEVO: Para restaurar stock cuando se cancela una reserva
+	public boolean increaseStock(int bookId, int quantity) throws Exception;
 }

@@ -34,9 +34,10 @@ public class CartManager implements CartManagerService {
         }
         
         // 2. Calcular cantidad total solicitada (considerando lo que ya está en el carrito)
+        // IMPORTANTE: Solo contar items NO reservados, porque las reservas ya redujeron stock
         int totalRequested = quantity;
         for (CartItem item : cart.getItems()) {
-            if (item.getBook().getId() == bookId) {
+            if (item.getBook().getId() == bookId && !item.isReserved()) {
                 totalRequested += item.getQuantity();
                 break;
             }
@@ -87,7 +88,37 @@ public class CartManager implements CartManagerService {
     }
     
     @Override
+    public void reserveBook(Cart cart, int bookId, int quantity) throws Exception {
+        logger.debug("Reserving book " + bookId + ". Quantity: " + quantity);
+        
+        // 1. Obtener el libro con precio calculado
+        Book book = bookManagerService.getBookById(bookId);
+        
+        if (book == null) {
+            throw new Exception("cart.bookNotFound");
+        }
+        
+        // 2. Verificar stock disponible
+        if (!bookManagerService.checkStockAvailability(bookId, quantity)) {
+            throw new Exception("cart.notEnoughStock");
+        }
+        
+        // 3. Crear CartItem especial para reserva
+        CartItem reservationItem = new CartItem(book, quantity, true);
+        
+        // 4. Añadir al carrito
+        cart.getItems().add(reservationItem);
+        logger.debug("Book reserved and added to cart");
+    }
+    
+    @Override
     public double calculateTotal(Cart cart) {
         return cart.getTotal();
+    }
+    
+    @Override
+    public boolean reduceStockForPurchase(int bookId, int quantity) throws Exception {
+        logger.debug("Reducing stock for purchase: book " + bookId + ", quantity: " + quantity);
+        return bookManagerService.reduceStock(bookId, quantity);
     }
 }
