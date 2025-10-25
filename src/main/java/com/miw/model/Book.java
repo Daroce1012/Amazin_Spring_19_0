@@ -24,6 +24,7 @@ public class Book {
     @ManyToOne(optional = false, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private VAT vat;
 	private double basePrice;
+	private int stock;
 	
 
 	@Transient
@@ -40,7 +41,7 @@ public class Book {
 	}
 
 
-	public Book(double price, String title, String description, String author, VAT vat, double basePrice) {
+	public Book(double price, String title, String description, String author, VAT vat, double basePrice, int stock) {
 		super();
 		this.price = price;
 		this.title = title;
@@ -48,6 +49,7 @@ public class Book {
 		this.author = author;
 		this.vat = vat;
 		this.basePrice = basePrice;
+		this.stock = stock;
 	}
 	
 	
@@ -106,9 +108,17 @@ public class Book {
 		this.basePrice = basePrice;
 	}
 
+	public int getStock() {
+		return stock;
+	}
+
+	public void setStock(int stock) {
+		this.stock = stock;
+	}
+
 	@Override
 	public String toString() {
 		return "Book [id=" + id + ", title=" + title + ", description=" + description + ", author=" + author
-				+ ", vat=" + vat + ", basePrice=" + basePrice + ", price=" + price + "]";
+				+ ", vat=" + vat + ", basePrice=" + basePrice + ", price=" + price + ", stock=" + stock + "]";
 	}
 }

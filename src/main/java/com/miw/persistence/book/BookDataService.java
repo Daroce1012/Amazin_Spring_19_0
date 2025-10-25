@@ -8,4 +8,6 @@ public interface BookDataService {
 
 	List<Book> getBooks() throws Exception;
 	public Book newBook(Book book) throws Exception;
+	public Book getBookById(int id) throws Exception;
+	public void updateBookStock(int bookId, int newStock) throws Exception;
 }

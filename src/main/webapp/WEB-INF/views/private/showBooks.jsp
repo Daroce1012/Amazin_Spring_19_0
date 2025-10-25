@@ -4,6 +4,7 @@
 	import="java.util.*, com.miw.model.Book,com.miw.presentation.book.*"
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%@ page isELIgnored="false"%>
 
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
@@ -33,10 +34,11 @@
 				<caption>Our catalog:</caption>
 				<thead>
 					<tr>
-						<th>Title</th>
-						<th>Author</th>
-						<th>Description</th>
-						<th>Price</th>
+						<th><spring:message code="book.title"/></th>
+						<th><spring:message code="book.author"/></th>
+						<th><spring:message code="book.description"/></th>
+						<th><spring:message code="book.price"/></th>
+						<th><spring:message code="book.stock"/></th>
 					</tr>
 				</thead>
 
@@ -47,6 +49,7 @@
 							<td><c:out value="${book.author}" /></td>
 							<td><c:out value="${book.description}" /></td>
 							<td><c:out value="${book.price}" /> &euro;</td>
+							<td><c:out value="${book.stock}" /> <spring:message code="book.units"/></td>
 						</tr>						
 					</c:forEach>
 				</tbody>

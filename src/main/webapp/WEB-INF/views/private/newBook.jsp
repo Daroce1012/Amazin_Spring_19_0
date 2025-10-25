@@ -29,17 +29,20 @@
 			<form:form modelAttribute="book">
 				<form:errors path="" />
 				<br />
-				Title: <form:input path="title" />
+				<spring:message code="book.title"/>: <form:input path="title" />
 				<form:errors path="title" />
 				<br />
-				Description: <form:input path="description" />
+				<spring:message code="book.description"/>: <form:input path="description" />
 				<form:errors path="description" />
 				<br />
-				Author: <form:input path="author" />
+				<spring:message code="book.author"/>: <form:input path="author" />
 				<form:errors path="author" />
 				<br />
-				Base proce: <form:input path="basePrice" />
+				<spring:message code="book.basePrice"/>: <form:input path="basePrice" />
 				<form:errors path="basePrice" />
+				<br />
+				<spring:message code="book.stock"/>: <form:input path="stock" />
+				<form:errors path="stock" />
 				<br />
 				<input type="submit" />
 			</form:form>
