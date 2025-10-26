@@ -10,7 +10,7 @@
     <persistence-unit name="JPA_PU" transaction-type="RESOURCE_LOCAL">
     	<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider> <!-- Actualizado a Jakarta -->
         <properties>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:hsql://localhost/amazin" />
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:hsqldb:hsql://localhost/amazin19" />
             <property name="jakarta.persistence.jdbc.user" value="DFLANVIN" />
             <property name="jakarta.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver" />
             <property name="jakarta.persistence.jdbc.password" value="AMAZIN" />
