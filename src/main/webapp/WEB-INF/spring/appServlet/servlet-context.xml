@@ -26,6 +26,10 @@
     
     <security:global-method-security pre-post-annotations="enabled" secured-annotations="enabled"/>
 
+    <!-- Configuración de LocaleResolver para gestión de idiomas -->
+    <beans:bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+        <beans:property name="defaultLocale" value="es" />
+    </beans:bean>
 
     <!-- Enables the Spring MVC @Controller programming model -->
     <annotation-driven />

@@ -40,7 +40,9 @@
 	
 	<bean id="messageSource"
 	class="org.springframework.context.support.ResourceBundleMessageSource">
-	<property name="basename" value="messages" />
+		<property name="basename" value="messages" />
+		<property name="defaultEncoding" value="UTF-8" />
+		<property name="fallbackToSystemLocale" value="false" />
 	</bean>
 	
 	

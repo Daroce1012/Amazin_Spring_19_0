@@ -10,6 +10,9 @@
     <link href="<c:url value='/resources/css/style.css' />" rel="stylesheet">
 </head>
 <body>
+	<!-- Selector de idioma -->
+	<jsp:include page="languageSelector.jsp" />
+	
     <header>
         <h1 class="header">Amazin.com</h1>
 		<h2 class="centered">
@@ -46,8 +49,8 @@
         </article>
     </section>
     <footer>
-        <strong>Master in Web Engineering (miw.uniovi.es).</strong><br /> 
-        <em>University of Oviedo</em>
+        <strong><spring:message code="footer1"/></strong><br /> 
+        <em><spring:message code="footer2"/></em>
     </footer>
 </body>
 </html>

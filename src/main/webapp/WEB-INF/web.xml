@@ -21,6 +21,25 @@
         <param-value>com.miw.config.SecurityConfig</param-value>
     </context-param>
 
+    <!-- Filtro de encoding UTF-8 para todas las peticiones/respuestas -->
+    <filter>
+        <filter-name>encodingFilter</filter-name>
+        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+        <init-param>
+            <param-name>forceEncoding</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>encodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
     <!-- Registro del filtro de Spring Security -->
     <filter>
         <filter-name>springSecurityFilterChain</filter-name>
@@ -49,6 +68,3 @@
     </servlet-mapping>
 
 </web-app>
-
-
-

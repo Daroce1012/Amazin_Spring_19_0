@@ -197,7 +197,7 @@ public class CartController {
                     .orElse(null);
                 
                 if (itemToPurchase == null) {
-                    model.addAttribute("error", "cart.itemNotFound");
+                    session.setAttribute("error", "cart.itemNotFound");
                     return "redirect:viewCart";
                 }
                 
@@ -210,7 +210,7 @@ public class CartController {
                         reservationManagerService.purchaseReservation(res.getId());
                         logger.debug("Reservation purchased: " + res.getId());
                     } else {
-                        model.addAttribute("error", "reservation.notFound");
+                        session.setAttribute("error", "reservation.notFound");
                         return "redirect:viewCart";
                     }
                 } else {
@@ -221,7 +221,7 @@ public class CartController {
                     );
                     
                     if (!reduced) {
-                        model.addAttribute("error", "cart.notEnoughStock");
+                        session.setAttribute("error", "cart.notEnoughStock");
                         return "redirect:viewCart";
                     }
                     logger.debug("Stock reduced for normal purchase");
@@ -233,12 +233,12 @@ public class CartController {
                 // Actualizar carrito en sesión
                 cartSessionService.updateCart(session, cart);
                 
-                model.addAttribute("message", "cart.itemPurchased");
+                session.setAttribute("message", "cart.itemPurchased");
                 return "redirect:viewCart";
                 
             } catch (Exception e) {
                 logger.error("Error purchasing item", e);
-                model.addAttribute("error", "cart.checkoutError");
+                session.setAttribute("error", "cart.checkoutError");
                 return "redirect:viewCart";
             }
         }

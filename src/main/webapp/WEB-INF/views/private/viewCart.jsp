@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<%@ page contentType="text/html; charset=iso-8859-1"
-	pageEncoding="iso-8859-1" language="java"
+<%@ page contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8" language="java"
 	import="java.util.*, com.miw.model.Cart, com.miw.model.CartItem"
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%@ page isELIgnored="false"%>
 
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <head>
 <title>Amazin - Shopping Cart</title>
 <link href="<c:url value="/resources/css/style.css" />" rel="stylesheet">
 </head>
 <body>
+	<!-- Selector de idioma -->
+	<jsp:include page="../languageSelector.jsp" />
+	
 	<header>
 		<h1 class="header">Amazin.com</h1>
 		<h2 class="centered">
-			Welcome to the <em>smallest</em> online shop in the world!!
+			<spring:message code="welcome"/>
 		</h2>
 	</header>
 	<nav>
 		<ul>
 			<li><a href="menu"><spring:message code="start"/></a></li>
-			<li><a href="showBooks">Catalog</a></li>
-			<li><a href="newBook">Add New</a></li>
+			<li><a href="showBooks"><spring:message code="catalog.title"/></a></li>
+			<li><a href="newBook"><spring:message code="navigation.addNew"/></a></li>
 			<li><a href="myReservations"><spring:message code="reservation.myReservations"/></a></li>
 			<li><a href="http://miw.uniovi.es"><spring:message code="about"/></a></li>
 			<li><a href="mailto:dd@email.com"><spring:message code="contact"/></a></li>
@@ -34,17 +37,19 @@
 		<article>
 			<h2><spring:message code="cart.shoppingCart"/></h2>
 			
-			<!-- Mostrar mensajes de éxito o error -->
-			<c:if test="${not empty message}">
+			<!-- Mostrar mensajes de éxito o error desde sesión -->
+			<c:if test="${not empty sessionScope.message}">
 				<div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; margin: 20px 0; border-radius: 5px;">
-					<spring:message code="${message}"/>
+					<spring:message code="${sessionScope.message}"/>
 				</div>
+				<c:remove var="message" scope="session"/>
 			</c:if>
 			
-			<c:if test="${not empty error}">
+			<c:if test="${not empty sessionScope.error}">
 				<div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; margin: 20px 0; border-radius: 5px;">
-					<spring:message code="${error}"/>
+					<spring:message code="${sessionScope.error}"/>
 				</div>
+				<c:remove var="error" scope="session"/>
 			</c:if>
 			
 			<c:if test="${cart.isEmpty()}">
@@ -127,7 +132,7 @@
 		</article>
 	</section>
 	<footer>
-		<strong> Master in Web Engineering (miw.uniovi.es).</strong><br /> <em>University
-			of Oviedo </em>
+		<strong> <spring:message code="footer1"/></strong><br /> 
+		<em><spring:message code="footer2"/> </em>
 	</footer>
 </body>

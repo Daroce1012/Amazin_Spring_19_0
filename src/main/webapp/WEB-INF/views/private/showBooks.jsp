@@ -1,29 +1,32 @@
-<!DOCTYPE html >
-<%@ page contentType="text/html; charset=iso-8859-1"
-	pageEncoding="iso-8859-1" language="java"
+<!DOCTYPE html>
+<%@ page contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8" language="java"
 	import="java.util.*, com.miw.model.Book,com.miw.presentation.book.*"
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%@ page isELIgnored="false"%>
 
-<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <head>
 <title>Amazin</title>
 <link href="<c:url value="/resources/css/style.css" />" rel="stylesheet">
 </head>
 <body>
+	<!-- Selector de idioma -->
+	<jsp:include page="../languageSelector.jsp" />
+	
 	<header>
 		<h1 class="header">Amazin.com</h1>
 		<h2 class="centered">
-			Welcome to the <em>smallest</em> online shop in the world!!
+			<spring:message code="welcome"/>
 		</h2>
 	</header>
 	<nav>
 		<ul>
 			<li><a href="menu"><spring:message code="start"/></a></li>
-			<li><a href="newBook">Add New</a></li>
+			<li><a href="newBook"><spring:message code="navigation.addNew"/></a></li>
 			<li><a href="viewCart"><spring:message code="cart.viewCart"/></a></li>
 			<li><a href="myReservations"><spring:message code="reservation.myReservations"/></a></li>
 			<li><a href="http://miw.uniovi.es"><spring:message code="about"/></a></li>
@@ -46,7 +49,7 @@
 			</c:if>
 			
 			<table>
-				<caption>Our catalog:</caption>
+				<caption><spring:message code="catalog.title"/>:</caption>
 				<thead>
 					<tr>
 						<th><spring:message code="book.title"/></th>
@@ -100,7 +103,7 @@
 		</article>
 	</section>
 	<footer>
-		<strong> Master in Web Engineering (miw.uniovi.es).</strong><br /> <em>University
-			of Oviedo </em>
+		<strong> <spring:message code="footer1"/></strong><br /> 
+		<em><spring:message code="footer2"/> </em>
 	</footer>
 </body>

@@ -26,7 +26,7 @@ public class SecurityConfig {
         http
         .authorizeHttpRequests((requests) -> requests
             .requestMatchers("/private/**", "/main/**").hasRole("ADMIN")  // Protege las rutas privadas
-            .requestMatchers("/resources/**").permitAll()
+            .requestMatchers("/resources/**", "/changeLanguage").permitAll()  // Permite cambio de idioma sin autenticación
             .anyRequest().authenticated()  // Requiere autenticación para cualquier otra ruta
         )
         .formLogin(form -> form
