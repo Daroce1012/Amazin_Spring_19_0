@@ -5,6 +5,7 @@
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ page isELIgnored="false"%>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -87,9 +88,9 @@
 										</c:otherwise>
 									</c:choose>
 								</td>
-								<td><c:out value="${item.unitPrice}" /> &euro;</td>
+								<td><c:out value="${String.format('%.2f', item.unitPrice)}" /> &euro;</td>
 								<td><c:out value="${item.quantity}" /></td>
-								<td><c:out value="${item.subtotal}" /> &euro;</td>
+								<td><c:out value="${String.format('%.2f', item.subtotal)}" /> &euro;</td>
 							<td>
 								<form action="purchaseItem" method="post" style="display:inline; margin-right: 5px;">
 									<input type="hidden" name="bookId" value="${item.bookId}"/>
@@ -108,7 +109,7 @@
 					<tfoot>
 						<tr>
 							<td colspan="6"><strong><spring:message code="cart.total"/>:</strong></td>
-							<td><strong><c:out value="${total}" /> &euro;</strong></td>
+							<td><strong><c:out value="${String.format('%.2f', total)}" /> &euro;</strong></td>
 						</tr>
 					</tfoot>
 				</table>

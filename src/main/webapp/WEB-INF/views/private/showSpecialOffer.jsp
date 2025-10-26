@@ -5,6 +5,7 @@
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ page isELIgnored="false"%>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -49,7 +50,7 @@
 						<td><c:out value="${book.title}" /></td>
 						<td><c:out value="${book.author}" /></td>
 						<td><c:out value="${book.description}" /></td>
-						<td><c:out value="${book.price}" /> &euro;</td>
+						<td><c:out value="${String.format('%.2f', book.price)}" /> &euro;</td>
 					</tr>
 				</tbody>
 			</table>

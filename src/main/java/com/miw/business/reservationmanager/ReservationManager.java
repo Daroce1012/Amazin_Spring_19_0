@@ -90,6 +90,35 @@ public class ReservationManager implements ReservationManagerService {
     }
     
     @Override
+    public Reservation getReservationById(int reservationId, String username) throws Exception {
+        logger.debug("Getting reservation by ID: " + reservationId + " for user: " + username);
+        
+        // Obtener la reserva directamente por ID
+        Reservation reservation = reservationDataService.getReservationById(reservationId);
+        
+        if (reservation == null) {
+            throw new Exception("reservation.notFound");
+        }
+        
+        // Validar que la reserva pertenece al usuario (seguridad)
+        if (!reservation.getUsername().equals(username)) {
+            logger.warn("User " + username + " tried to access reservation " + reservationId + " belonging to " + reservation.getUsername());
+            throw new Exception("reservation.accessDenied");
+        }
+        
+        // Actualizar precio del libro (como en otros métodos)
+        Book book = reservation.getBook();
+        if (book != null) {
+            Book bookWithPrice = bookManagerService.getBookById(book.getId());
+            if (bookWithPrice != null) {
+                book.setPrice(bookWithPrice.getPrice());
+            }
+        }
+        
+        return reservation;
+    }
+    
+    @Override
     public boolean purchaseReservation(int reservationId) throws Exception {
         logger.debug("Purchasing reservation: " + reservationId);
         
@@ -196,5 +225,19 @@ public class ReservationManager implements ReservationManagerService {
         }
         
         return true;
+    }
+    
+    @Override
+    public void cancelAllReservationsInCart(String username, Cart cart) throws Exception {
+        logger.debug("Cancelling all reservations in cart for user: " + username);
+        
+        for (CartItem item : cart.getItems()) {
+            if (item.isReserved()) {
+                boolean cancelled = cancelReservationByUserAndBook(username, item.getBookId());
+                if (!cancelled) {
+                    logger.warn("Could not cancel reservation for bookId: " + item.getBookId());
+                }
+            }
+        }
     }
 }

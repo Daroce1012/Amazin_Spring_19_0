@@ -102,11 +102,8 @@ public class CartController {
             try {
                 Cart cart = cartSessionService.getOrCreateCart(session);
                 
-                // Buscar el item
-                CartItem itemToRemove = cart.getItems().stream()
-                    .filter(item -> item.getBookId() == bookId)
-                    .findFirst()
-                    .orElse(null);
+                // Buscar el item usando método encapsulado
+                CartItem itemToRemove = cart.findItemByBookId(bookId);
                 
                 if (itemToRemove != null) {
                     // Si es reserva, cancelarla en BD (restaura stock)
@@ -147,12 +144,8 @@ public class CartController {
                 if (!cart.isEmpty()) {
                     String username = principal.getName();
                     
-                    // Cancelar reservas antes de vaciar
-                    for (CartItem item : cart.getItems()) {
-                        if (item.isReserved()) {
-                            reservationManagerService.cancelReservationByUserAndBook(username, item.getBookId());
-                        }
-                    }
+                    // Cancelar todas las reservas usando método del servicio
+                    reservationManagerService.cancelAllReservationsInCart(username, cart);
                     
                     // Vaciar el carrito
                     cart.clear();
@@ -187,42 +180,21 @@ public class CartController {
                 String username = principal.getName();
                 Cart cart = cartSessionService.getOrCreateCart(session);
                 
-                // Buscar el item en el carrito
-                CartItem itemToPurchase = cart.getItems().stream()
-                    .filter(item -> item.getBookId() == bookId)
-                    .findFirst()
-                    .orElse(null);
+                // Buscar el item en el carrito usando método encapsulado
+                CartItem itemToPurchase = cart.findItemByBookId(bookId);
                 
                 if (itemToPurchase == null) {
                     session.setAttribute("error", "cart.itemNotFound");
                     return "redirect:viewCart";
                 }
                 
-                // Procesar la compra según el tipo
-                if (itemToPurchase.isReserved()) {
-                    // Es reserva: completar pago del 95% restante
-                    Reservation res = reservationManagerService.getReservationByUserAndBook(username, bookId);
-                    
-                    if (res != null) {
-                        reservationManagerService.purchaseReservation(res.getId());
-                        logger.debug("Reservation purchased: " + res.getId());
-                    } else {
-                        session.setAttribute("error", "reservation.notFound");
-                        return "redirect:viewCart";
-                    }
-                } else {
-                    // Es compra normal: reducir stock
-                    boolean reduced = cartManagerService.reduceStockForPurchase(
-                        itemToPurchase.getBookId(), 
-                        itemToPurchase.getQuantity()
-                    );
-                    
-                    if (!reduced) {
-                        session.setAttribute("error", "cart.notEnoughStock");
-                        return "redirect:viewCart";
-                    }
-                    logger.debug("Stock reduced for normal purchase");
-                }
+                // Procesar la compra usando servicio de negocio (maneja reservas y compras normales)
+                cartManagerService.purchaseCartItem(
+                    username, 
+                    itemToPurchase.getBookId(), 
+                    itemToPurchase.getQuantity(),
+                    itemToPurchase.isReserved()
+                );
                 
                 // Quitar el item del carrito usando servicio
                 cartSessionService.removeItemFromCart(cart, bookId, itemToPurchase.isReserved());
@@ -235,7 +207,16 @@ public class CartController {
                 
             } catch (Exception e) {
                 logger.error("Error purchasing item", e);
-                session.setAttribute("error", "cart.checkoutError");
+                
+                // Manejar errores específicos
+                String errorMsg = e.getMessage();
+                if ("reservation.notFound".equals(errorMsg)) {
+                    session.setAttribute("error", "reservation.notFound");
+                } else if ("cart.notEnoughStock".equals(errorMsg)) {
+                    session.setAttribute("error", "cart.notEnoughStock");
+                } else {
+                    session.setAttribute("error", "cart.checkoutError");
+                }
                 return "redirect:viewCart";
             }
         }

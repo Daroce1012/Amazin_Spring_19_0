@@ -7,6 +7,7 @@ import com.miw.model.Book;
 import com.miw.model.CartItem;
 import com.miw.model.Reservation;
 import com.miw.business.bookmanager.BookManagerService;
+import com.miw.business.reservationmanager.ReservationManagerService;
 import java.util.List;
 
 public class CartManager implements CartManagerService {
@@ -15,6 +16,9 @@ public class CartManager implements CartManagerService {
     
     @Autowired
     private BookManagerService bookManagerService;
+    
+    @Autowired
+    private ReservationManagerService reservationManagerService;
     
     @Override
     public void addBookToCart(Cart cart, int bookId, int quantity) throws Exception {
@@ -116,5 +120,30 @@ public class CartManager implements CartManagerService {
         }
         
         return true;
+    }
+    
+    @Override
+    public void purchaseCartItem(String username, int bookId, int quantity, boolean isReserved) throws Exception {
+        logger.debug("Purchasing cart item: bookId=" + bookId + ", isReserved=" + isReserved);
+        
+        if (isReserved) {
+            // Es reserva: completar pago del 95% restante
+            Reservation res = reservationManagerService.getReservationByUserAndBook(username, bookId);
+            
+            if (res == null) {
+                throw new Exception("reservation.notFound");
+            }
+            
+            reservationManagerService.purchaseReservation(res.getId());
+            logger.debug("Reservation purchased: " + res.getId());
+        } else {
+            // Es compra normal: reducir stock
+            boolean reduced = reduceStockForPurchase(bookId, quantity);
+            
+            if (!reduced) {
+                throw new Exception("cart.notEnoughStock");
+            }
+            logger.debug("Stock reduced for normal purchase");
+        }
     }
 }

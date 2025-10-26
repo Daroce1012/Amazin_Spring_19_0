@@ -5,6 +5,7 @@
 	errorPage=""%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ page isELIgnored="false"%>
 
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -66,7 +67,6 @@
 						<th><spring:message code="cart.quantity"/></th>
 						<th><spring:message code="reservation.paidAmount"/> (5%)</th>
 						<th><spring:message code="reservation.remainingAmount"/> (95%)</th>
-						<th><spring:message code="reservation.date"/></th>
 						<th><spring:message code="reservation.actions"/></th>
 					</tr>
 					</thead>
@@ -75,11 +75,10 @@
 							<tr>
 								<td><c:out value="${reservation.book.title}" /></td>
 								<td><c:out value="${reservation.book.author}" /></td>
-								<td><c:out value="${reservation.book.price}" /> &euro;</td>
+								<td><c:out value="${String.format('%.2f', reservation.book.price)}" /> &euro;</td>
 								<td><c:out value="${reservation.quantity}" /></td>
-								<td><c:out value="${reservation.reservationPrice}" /> &euro;</td>
-								<td><c:out value="${reservation.remainingAmount}" /> &euro;</td>
-								<td><c:out value="${reservation.reservationDate}" /></td>
+								<td><c:out value="${String.format('%.2f', reservation.reservationPrice)}" /> &euro;</td>
+								<td><c:out value="${String.format('%.2f', reservation.remainingAmount)}" /> &euro;</td>
 								<td>
 									<form action="purchaseReservation" method="post" style="display:inline;">
 										<input type="hidden" name="reservationId" value="${reservation.id}"/>
@@ -105,9 +104,9 @@
 								<c:forEach var='reservation' items="${reservations}">
 									<c:set var="totalPaid" value="${totalPaid + reservation.reservationPrice}" />
 								</c:forEach>
-								<c:out value="${totalPaid}" /> &euro;
+								<c:out value="${String.format('%.2f', totalPaid)}" /> &euro;
 							</strong></td>
-							<td colspan="3"></td>
+							<td colspan="2"></td>
 						</tr>
 						<tr>
 							<td colspan="4"><strong><spring:message code="cart.total"/> (<spring:message code="reservation.remainingAmount"/>):</strong></td>
@@ -116,9 +115,9 @@
 								<c:forEach var='reservation' items="${reservations}">
 									<c:set var="totalRemaining" value="${totalRemaining + reservation.remainingAmount}" />
 								</c:forEach>
-								<c:out value="${totalRemaining}" /> &euro;
+								<c:out value="${String.format('%.2f', totalRemaining)}" /> &euro;
 							</strong></td>
-							<td colspan="3"></td>
+							<td colspan="2"></td>
 						</tr>
 					</tfoot>
 				</table>

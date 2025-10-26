@@ -9,4 +9,5 @@ public interface CartManagerService {
     boolean reduceStockForPurchase(int bookId, int quantity) throws Exception;
     void synchronizeCartWithReservations(Cart cart, List<Reservation> reservations);
     boolean processNormalPurchases(Cart cart) throws Exception;
+    void purchaseCartItem(String username, int bookId, int quantity, boolean isReserved) throws Exception;
 }

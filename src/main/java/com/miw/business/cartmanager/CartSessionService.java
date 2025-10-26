@@ -45,5 +45,35 @@ public class CartSessionService {
             cart.removeNonReservedItem(bookId);
         }
     }
+    
+    /**
+     * Actualiza o añade un item reservado al carrito en sesión.
+     * Obtiene el carrito, modifica y actualiza en sesión automáticamente.
+     */
+    public void updateReservedItemInCart(HttpSession session, com.miw.model.Book book, int quantity) {
+        Cart cart = getOrCreateCart(session);
+        cart.updateOrAddReservedItem(book, quantity);
+        updateCart(session, cart);
+    }
+    
+    /**
+     * Añade un item reservado al carrito en sesión.
+     * Obtiene el carrito, modifica y actualiza en sesión automáticamente.
+     */
+    public void addReservedItemToCart(HttpSession session, com.miw.model.Book book, int quantity) {
+        Cart cart = getOrCreateCart(session);
+        cart.addReservedItem(book, quantity);
+        updateCart(session, cart);
+    }
+    
+    /**
+     * Elimina un item del carrito en sesión por ID de libro.
+     * Obtiene el carrito, modifica y actualiza en sesión automáticamente.
+     */
+    public void removeItemFromCart(HttpSession session, int bookId) {
+        Cart cart = getOrCreateCart(session);
+        cart.removeItem(bookId);
+        updateCart(session, cart);
+    }
 }
 

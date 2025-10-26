@@ -10,16 +10,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpSession;
 import com.miw.business.reservationmanager.ReservationManagerService;
+import com.miw.business.cartmanager.CartSessionService;
 import com.miw.model.Cart;
-import com.miw.model.CartItem;
-import com.miw.model.Book;
 import com.miw.model.Reservation;
+import org.apache.logging.log4j.*;
 
 @Controller
 public class ReservationController {
     
+    Logger logger = LogManager.getLogger(this.getClass());
+    
     @Autowired
     private ReservationManagerService reservationManagerService;
+    
+    @Autowired
+    private CartSessionService cartSessionService;
     
     @Autowired
     private ServletContext servletContext;
@@ -44,26 +49,8 @@ public class ReservationController {
                     // Ya existe una reserva, incrementar cantidad usando el manager
                     Reservation updated = reservationManagerService.incrementReservationQuantity(existingReservation.getId(), quantity);
                     
-                    // Actualizar cantidad en el carrito
-                    Cart cart = (Cart) session.getAttribute("cart");
-                    if (cart != null) {
-                        boolean found = false;
-                        for (CartItem item : cart.getItems()) {
-                            if (item.getBookId() == bookId && item.isReserved()) {
-                                item.setQuantity(updated.getQuantity()); // Usar cantidad actualizada de BD
-                                found = true;
-                                break;
-                            }
-                        }
-                        
-                        // Si no se encontró en el carrito, añadirlo
-                        if (!found) {
-                            CartItem item = new CartItem(updated.getBook(), updated.getQuantity(), true);
-                            cart.getItems().add(item);
-                        }
-                        
-                        session.setAttribute("cart", cart);
-                    }
+                    // Actualizar cantidad en el carrito usando método helper del servicio
+                    cartSessionService.updateReservedItemInCart(session, updated.getBook(), updated.getQuantity());
                     
                     model.addAttribute("message", "reservation.updated");
                     return "redirect:viewCart";
@@ -73,24 +60,14 @@ public class ReservationController {
                 // 1. Crear reserva en BD (reduce stock)
                 Reservation reservation = reservationManagerService.createReservation(username, bookId, quantity);
                 
-                // 2. Obtener o crear carrito en sesión
-                Cart cart = (Cart) session.getAttribute("cart");
-                if (cart == null) {
-                    cart = new Cart();
-                }
-                
-                // 3. Añadir al carrito con marca de reserva
-                Book book = reservation.getBook();
-                CartItem item = new CartItem(book, quantity, true); // isReserved = true
-                cart.getItems().add(item);
-                
-                // 4. Actualizar carrito en sesión
-                session.setAttribute("cart", cart);
+                // 2. Añadir al carrito usando método helper del servicio
+                cartSessionService.addReservedItemToCart(session, reservation.getBook(), quantity);
                 
                 session.setAttribute("message", "reservation.created");
                 return "redirect:showBooks";
                 
             } catch (Exception e) {
+                logger.error("Error creating reservation for user " + principal.getName(), e);
                 session.setAttribute("error", "error.general");
                 return "redirect:showBooks";
             }
@@ -109,10 +86,11 @@ public class ReservationController {
             model.addAttribute("reservations", reservations);
             return "private/myReservations";
             
-        } catch (Exception e) {
-            model.addAttribute("error", "error.general");
-            return "private/error";
-        }
+            } catch (Exception e) {
+                logger.error("Error getting reservations for user " + principal.getName(), e);
+                model.addAttribute("error", "error.general");
+                return "private/error";
+            }
     }
     
     @RequestMapping("private/purchaseReservation")
@@ -126,33 +104,14 @@ public class ReservationController {
             try {
                 String username = principal.getName();
                 
-                // 1. Obtener información de la reserva ANTES de eliminarla
-                Reservation res = reservationManagerService.getReservations(username).stream()
-                    .filter(r -> r.getId() == reservationId)
-                    .findFirst()
-                    .orElse(null);
-                
-                if (res == null) {
-                    model.addAttribute("error", "reservation.notFound");
-                    return "redirect:myReservations";
-                }
-                
-                int bookId = res.getBook().getId();
-                
-                // 2. Comprar la reserva (eliminar de BD, stock ya reducido)
-                reservationManagerService.purchaseReservation(reservationId);
-                
-                // 3. Quitar del carrito de sesión
-                Cart cart = (Cart) session.getAttribute("cart");
-                if (cart != null) {
-                    cart.removeItem(bookId);
-                    session.setAttribute("cart", cart);
-                }
+                // Usar método helper para procesar reserva y actualizar carrito
+                processReservationAndRemoveFromCart(reservationId, username, session, true);
                 
                 model.addAttribute("message", "reservation.purchased");
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
+                logger.error("Error purchasing reservation " + reservationId, e);
                 model.addAttribute("error", "error.general");
                 return "redirect:myReservations";
             }
@@ -170,29 +129,46 @@ public class ReservationController {
             try {
                 String username = principal.getName();
                 
-                // 1. Obtener info de la reserva antes de cancelar
-                Reservation res = reservationManagerService.getReservations(username).stream()
-                    .filter(r -> r.getId() == reservationId)
-                    .findFirst()
-                    .orElse(null);
-                
-                // 2. Cancelar reserva (restaura stock)
-                reservationManagerService.cancelReservation(reservationId);
-                
-                // 3. Quitar del carrito de sesión
-                Cart cart = (Cart) session.getAttribute("cart");
-                if (cart != null && res != null) {
-                    cart.removeItem(res.getBook().getId());
-                    session.setAttribute("cart", cart);
-                }
+                // Usar método helper para procesar reserva y actualizar carrito
+                processReservationAndRemoveFromCart(reservationId, username, session, false);
                 
                 model.addAttribute("message", "reservation.cancelled");
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
+                logger.error("Error cancelling reservation " + reservationId, e);
                 model.addAttribute("error", "error.general");
                 return "redirect:myReservations";
             }
         }
+    }
+    
+    /**
+     * Método helper privado para procesar una reserva y actualizar el carrito.
+     * Elimina duplicación entre purchaseReservation y cancelReservationFromPage.
+     * 
+     * @param reservationId ID de la reserva a procesar
+     * @param username Usuario propietario de la reserva
+     * @param session Sesión HTTP
+     * @param isPurchase true para comprar, false para cancelar
+     */
+    private void processReservationAndRemoveFromCart(
+            int reservationId, 
+            String username, 
+            HttpSession session,
+            boolean isPurchase) throws Exception {
+        
+        // 1. Obtener información de la reserva
+        Reservation res = reservationManagerService.getReservationById(reservationId, username);
+        
+        // 2. Procesar la reserva (comprar o cancelar)
+        if (isPurchase) {
+            reservationManagerService.purchaseReservation(reservationId);
+        } else {
+            reservationManagerService.cancelReservation(reservationId);
+        }
+        
+        // 3. Quitar del carrito usando método helper del servicio
+        cartSessionService.removeItemFromCart(session, res.getBook().getId());
     }
 }

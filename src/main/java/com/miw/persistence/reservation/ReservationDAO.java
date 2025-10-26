@@ -31,7 +31,6 @@ public class ReservationDAO implements ReservationDataService {
             reservation.setBook(book);
             reservation.setUsername(username);
             reservation.setQuantity(quantity);
-            reservation.setReservationDate(java.time.LocalDateTime.now());
             
             em.persist(reservation);
             logger.debug("Reservation created successfully with ID: " + reservation.getId());
@@ -53,7 +52,7 @@ public class ReservationDAO implements ReservationDataService {
             EntityManager em = dba.getActiveEm();
             
             TypedQuery<Reservation> query = em.createQuery(
-                "SELECT r FROM Reservation r WHERE r.username = :username ORDER BY r.reservationDate DESC", 
+                "SELECT r FROM Reservation r WHERE r.username = :username ORDER BY r.id DESC", 
                 Reservation.class
             );
             query.setParameter("username", username);

@@ -1,7 +1,6 @@
 package com.miw.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 public class Reservation {
@@ -16,7 +15,6 @@ public class Reservation {
     
     private String username;
     private int quantity;
-    private LocalDateTime reservationDate;
     
     // Constructor vacío para JPA
     public Reservation() {
@@ -28,7 +26,6 @@ public class Reservation {
         this.book = book;
         this.username = username;
         this.quantity = quantity;
-        this.reservationDate = LocalDateTime.now();
     }
     
     // Getters y Setters
@@ -64,14 +61,6 @@ public class Reservation {
         this.quantity = quantity;
     }
     
-    public LocalDateTime getReservationDate() {
-        return reservationDate;
-    }
-    
-    public void setReservationDate(LocalDateTime reservationDate) {
-        this.reservationDate = reservationDate;
-    }
-    
     // Métodos calculados dinámicamente
     public double getReservationPrice() {
         return book.getPrice() * quantity * 0.05; // 5% pagado
@@ -88,7 +77,6 @@ public class Reservation {
     @Override
     public String toString() {
         return "Reservation [id=" + id + ", book=" + book.getTitle() + 
-               ", username=" + username + ", quantity=" + quantity + 
-               ", reservationDate=" + reservationDate + "]";
+               ", username=" + username + ", quantity=" + quantity + "]";
     }
 }
