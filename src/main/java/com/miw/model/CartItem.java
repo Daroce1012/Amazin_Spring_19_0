@@ -9,13 +9,6 @@ public class CartItem {
         super();
     }
     
-    public CartItem(Book book, int quantity) {
-        super();
-        this.book = book;
-        this.quantity = quantity;
-        this.isReserved = false;
-    }
-    
     public CartItem(Book book, int quantity, boolean isReserved) {
         super();
         this.book = book;
@@ -53,14 +46,6 @@ public class CartItem {
             return book.getPrice() * quantity * 0.95; // 95% restante por pagar en reservas
         }
         return book.getPrice() * quantity;
-    }
-    
-    // Calcula cuánto se pagó inicialmente (si es reserva)
-    public double getPaidAmount() {
-        if (isReserved) {
-            return book.getPrice() * quantity * 0.05; // 5% ya pagado
-        }
-        return 0;
     }
     
     // Métodos delegados para facilitar acceso en JSP

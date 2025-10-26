@@ -5,14 +5,19 @@ import com.miw.model.Reservation;
 import com.miw.model.Cart;
 
 public interface ReservationManagerService {
-    Reservation createReservation(String username, int bookId, int quantity) throws Exception;
+    // Operaciones de reserva
+    Reservation reserveBook(String username, int bookId, int quantity) throws Exception;
+    
+    // Consultas
     List<Reservation> getReservations(String username) throws Exception;
     Reservation getReservationByUserAndBook(String username, int bookId) throws Exception;
-    Reservation getReservationById(int reservationId, String username) throws Exception;
-    boolean purchaseReservation(int reservationId) throws Exception;
-    boolean cancelReservation(int reservationId) throws Exception;
+    
+    // Operaciones con validación de propiedad
+    boolean purchaseReservation(int reservationId, String username) throws Exception;
+    boolean cancelReservation(int reservationId, String username) throws Exception;
     boolean cancelReservationByUserAndBook(String username, int bookId) throws Exception;
-    Reservation incrementReservationQuantity(int reservationId, int additionalQuantity) throws Exception;
+    
+    // Operaciones con carrito
     boolean processReservationsInCart(String username, Cart cart) throws Exception;
     void cancelAllReservationsInCart(String username, Cart cart) throws Exception;
 }

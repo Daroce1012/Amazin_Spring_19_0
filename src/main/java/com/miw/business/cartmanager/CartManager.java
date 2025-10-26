@@ -134,7 +134,7 @@ public class CartManager implements CartManagerService {
                 throw new Exception("reservation.notFound");
             }
             
-            reservationManagerService.purchaseReservation(res.getId());
+            reservationManagerService.purchaseReservation(res.getId(), username);
             logger.debug("Reservation purchased: " + res.getId());
         } else {
             // Es compra normal: reducir stock

@@ -27,9 +27,7 @@ public class BookManager implements BookManagerService {
 		this.discounts = discounts;
 	}
 
-	/**
-	 * Calcula el precio final con IVA y descuentos
-	 */
+	// Calcula el precio final con IVA y descuentos
 	private double calculateFinalPrice(Book book) {
 		return book.getBasePrice() 
 			* (1 + book.getVat().getValue()) 

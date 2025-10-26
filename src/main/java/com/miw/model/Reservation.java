@@ -70,10 +70,6 @@ public class Reservation {
         return book.getPrice() * quantity * 0.95; // 95% restante
     }
     
-    public double getTotalPrice() {
-        return book.getPrice() * quantity;
-    }
-    
     @Override
     public String toString() {
         return "Reservation [id=" + id + ", book=" + book.getTitle() + 

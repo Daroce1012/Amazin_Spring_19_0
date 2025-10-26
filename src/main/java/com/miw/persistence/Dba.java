@@ -37,10 +37,7 @@ public class Dba {
 		}
 	}
 
-	/**
-	 * Get the outer transaction; an active transaction must already exist for this
-	 * to succeed.
-	 */
+	// Obtiene la transacción activa (debe existir una transacción activa)
 	public EntityManager getActiveEm() {
 		if (outer == null) {
 			throw new IllegalStateException("No transaction was active!");
@@ -49,10 +46,7 @@ public class Dba {
 		return outer;
 	}
 
-	/**
-	 * Close the entity manager, properly committing or rolling back a transaction
-	 * if one is still active.
-	 */
+	// Cierra el entity manager, haciendo commit o rollback si hay una transacción activa
 	public void closeEm() {
 		if (outer == null) {
 			return;
@@ -74,10 +68,7 @@ public class Dba {
 		}
 	}
 
-	/**
-	 * Mark the transaction as rollback only, if there is an active transaction to
-	 * begin with.
-	 */
+	// Marca la transacción como rollback only, si hay una transacción activa
 	public void markRollback() {
 
 		if (outer != null) {
