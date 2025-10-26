@@ -51,17 +51,14 @@ public class CartController {
             // Actualizar carrito en sesión
             cartSessionService.updateCart(session, cart);
             
-            // Usar clave de internacionalización
-            model.addAttribute("message", "cart.bookAddedSuccessfully");
-            return "redirect:viewCart";
+            // Usar clave de internacionalización y volver al catálogo
+            session.setAttribute("message", "cart.bookAddedSuccessfully");
+            return "redirect:showBooks";
             
         } catch (Exception e) {
-            // Asegurar que el carrito esté disponible en el modelo para mostrar el error
-            Cart cart = cartSessionService.getOrCreateCart(session);
-            model.addAttribute("cart", cart);
-            model.addAttribute("total", cart.getTotal());
-            model.addAttribute("error", e.getMessage());
-            return "private/viewCart";
+            // Mostrar error y volver al catálogo
+            session.setAttribute("error", "error.general");
+            return "redirect:showBooks";
         }
     }
     
@@ -89,7 +86,7 @@ public class CartController {
             return "private/viewCart";
             
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", "error.general");
             return "private/error";
         }
     }
@@ -134,7 +131,7 @@ public class CartController {
                 return "redirect:viewCart";
                 
             } catch (Exception e) {
-                model.addAttribute("error", e.getMessage());
+                model.addAttribute("error", "error.general");
                 return "redirect:viewCart";
             }
         }
@@ -172,7 +169,7 @@ public class CartController {
                 return "private/viewCart";
                 
             } catch (Exception e) {
-                model.addAttribute("error", e.getMessage());
+                model.addAttribute("error", "error.general");
                 return "private/viewCart";
             }
         }

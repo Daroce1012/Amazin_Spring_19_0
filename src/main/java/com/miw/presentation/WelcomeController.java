@@ -38,7 +38,7 @@ public class WelcomeController {
 	public String loginError(ModelMap model)
 	{
 		model.addAttribute("error","true");
-		model.addAttribute("message", "Validation error");
+		model.addAttribute("message", "login.error");
 		return "login";
 	}
 
@@ -46,9 +46,9 @@ public class WelcomeController {
 	public String getForm(@RequestParam(value = "error", required = false) String error, ModelMap model) {
 	    System.out.println("Preparing the model for Login");
 	    if (error!=null && error.equals("wc")) {
-	        model.addAttribute("errorMessage", "Invalid username or password.");
+	        model.addAttribute("errorMessage", "login.invalidCredentials");
 	    }else if (error != null && !"wc".equals(error)) {
-	    	 model.addAttribute("errorMessage", "Unknown error.");
+	    	 model.addAttribute("errorMessage", "login.unknownError");
 	    }
 	    return "login";
 	}

@@ -43,7 +43,7 @@
 
             <p style="color: red;">
 		    <c:if test="${not empty errorMessage}">
-		        ${errorMessage}
+		        <spring:message code="${errorMessage}"/>
 		    </c:if>
 			</p>
         </article>

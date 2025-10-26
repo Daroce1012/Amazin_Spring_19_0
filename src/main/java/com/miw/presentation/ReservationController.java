@@ -87,11 +87,11 @@ public class ReservationController {
                 // 4. Actualizar carrito en sesión
                 session.setAttribute("cart", cart);
                 
-                model.addAttribute("message", "reservation.created");
-                return "redirect:viewCart";
+                session.setAttribute("message", "reservation.created");
+                return "redirect:showBooks";
                 
             } catch (Exception e) {
-                model.addAttribute("error", e.getMessage());
+                session.setAttribute("error", "error.general");
                 return "redirect:showBooks";
             }
         }
@@ -110,7 +110,7 @@ public class ReservationController {
             return "private/myReservations";
             
         } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", "error.general");
             return "private/error";
         }
     }
@@ -153,7 +153,7 @@ public class ReservationController {
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
-                model.addAttribute("error", e.getMessage());
+                model.addAttribute("error", "error.general");
                 return "redirect:myReservations";
             }
         }
@@ -190,7 +190,7 @@ public class ReservationController {
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
-                model.addAttribute("error", e.getMessage());
+                model.addAttribute("error", "error.general");
                 return "redirect:myReservations";
             }
         }

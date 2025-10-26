@@ -36,16 +36,18 @@
 	<section>
 		<article>
 			<!-- Mostrar mensajes de éxito o error -->
-			<c:if test="${not empty message}">
+			<c:if test="${not empty sessionScope.message}">
 				<div style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 15px; margin: 20px 0; border-radius: 5px;">
-					<spring:message code="${message}"/>
+					<spring:message code="${sessionScope.message}"/>
 				</div>
+				<c:remove var="message" scope="session"/>
 			</c:if>
 			
-			<c:if test="${not empty error}">
+			<c:if test="${not empty sessionScope.error}">
 				<div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; margin: 20px 0; border-radius: 5px;">
-					<spring:message code="${error}"/>
+					<spring:message code="${sessionScope.error}"/>
 				</div>
+				<c:remove var="error" scope="session"/>
 			</c:if>
 			
 			<table>
