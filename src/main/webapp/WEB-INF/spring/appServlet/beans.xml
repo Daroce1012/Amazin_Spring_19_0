@@ -25,9 +25,6 @@
 	<!-- Cart Manager -->
 	<bean id="cartManagerService" class="com.miw.business.cartmanager.CartManager"/>
 	
-	<!-- Cart Session Service -->
-	<bean id="cartSessionService" class="com.miw.business.cartmanager.CartSessionService"/>
-	
 	<!-- Persistence services implementation -->
 	<bean id="bookDataService" class="com.miw.persistence.book.BookDAO"/> 
 	<bean id="ivaDataService" class="com.miw.persistence.vat.VATDAO"/> 

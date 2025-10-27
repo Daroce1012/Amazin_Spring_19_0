@@ -46,6 +46,11 @@ public class Cart {
         return findItem(bookId, null);
     }
     
+    // Busca un item NO reservado por ID de libro
+    public CartItem findNonReservedItemByBookId(int bookId) {
+        return findItem(bookId, false);
+    }
+    
     public void removeNonReservedItem(int bookId) {
         items.removeIf(item -> item.getBookId() == bookId && !item.isReserved());
     }
