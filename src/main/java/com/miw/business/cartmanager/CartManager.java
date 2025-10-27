@@ -34,19 +34,14 @@ public class CartManager implements CartManagerService {
             logger.debug("Reservation purchased: {}", res.getId());
         } else {
             // Es compra normal: reducir stock
-            boolean reduced = reduceStockForPurchase(bookId, quantity);
+            logger.debug("Reducing stock for purchase: book {}, quantity: {}", bookId, quantity);
+            boolean reduced = bookManagerService.reduceStock(bookId, quantity);
             
             if (!reduced) {
                 throw new Exception("cart.notEnoughStock");
             }
             logger.debug("Stock reduced for normal purchase");
         }
-    }
-    
-    // Método privado - Reduce stock para una compra
-    private boolean reduceStockForPurchase(int bookId, int quantity) throws Exception {
-        logger.debug("Reducing stock for purchase: book {}, quantity: {}", bookId, quantity);
-        return bookManagerService.reduceStock(bookId, quantity);
     }
     
     // ==================== MÉTODOS PÚBLICOS ==================== 
@@ -189,10 +184,8 @@ public class CartManager implements CartManagerService {
                 // Solo procesar items NO reservados
                 if (!item.isReserved()) {
                     try {
-                        boolean reduced = reduceStockForPurchase(
-                            item.getBookId(), 
-                            item.getQuantity()
-                        );
+                        logger.debug("Reducing stock for purchase: book {}, quantity: {}", item.getBookId(), item.getQuantity());
+                        boolean reduced = bookManagerService.reduceStock(item.getBookId(), item.getQuantity());
                         
                         if (!reduced) {
                             logger.error("Failed to reduce stock for book: {}", item.getBookId());

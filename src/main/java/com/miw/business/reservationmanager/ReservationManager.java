@@ -52,39 +52,6 @@ public class ReservationManager implements ReservationManagerService {
         return reservation;
     }
     
-    // Compra reserva SIN validar usuario (para uso interno)
-    private boolean purchaseReservationInternal(int reservationId) throws Exception {
-        logger.debug("Purchasing reservation: {}", reservationId);
-        
-        Reservation reservation = reservationDataService.getReservationById(reservationId);
-        
-        if (reservation == null) {
-            throw new Exception("reservation.notFound");
-        }
-        
-        reservationDataService.deleteReservation(reservationId);
-        logger.debug("Reservation purchased and deleted. Stock remains reduced.");
-        return true;
-    }
-    
-    // Cancela reserva SIN validar usuario (para uso interno)
-    private boolean cancelReservationInternal(int reservationId) throws Exception {
-        logger.debug("Cancelling reservation: {}", reservationId);
-        
-        Reservation reservation = reservationDataService.getReservationById(reservationId);
-        
-        if (reservation == null) {
-            throw new Exception("reservation.notFound");
-        }
-        
-        Book book = reservation.getBook();
-        bookManagerService.increaseStock(book.getId(), reservation.getQuantity());
-        logger.debug("Stock restored for book {}", book.getId());
-        
-        reservationDataService.deleteReservation(reservationId);
-        logger.debug("Reservation cancelled and deleted");
-        return true;
-    }
     
     // MÉTODOS PÚBLICOS DE LA API
     
@@ -114,16 +81,31 @@ public class ReservationManager implements ReservationManagerService {
     public boolean purchaseReservation(int reservationId, String username) throws Exception {
         logger.debug("Purchasing reservation: {} for user: {}", reservationId, username);
         
-        getReservationById(reservationId, username);
-        return purchaseReservationInternal(reservationId);
+        // Obtener y validar propiedad en una sola consulta
+        Reservation reservation = getReservationById(reservationId, username);
+        
+        // Procesar compra
+        reservationDataService.deleteReservation(reservationId);
+        logger.debug("Reservation purchased and deleted. Stock remains reduced.");
+        return true;
     }
     
     @Override
     public boolean cancelReservation(int reservationId, String username) throws Exception {
         logger.debug("Cancelling reservation: {} for user: {}", reservationId, username);
         
-        getReservationById(reservationId, username);
-        return cancelReservationInternal(reservationId);
+        // Obtener y validar propiedad en una sola consulta
+        Reservation reservation = getReservationById(reservationId, username);
+        
+        // Restaurar stock
+        Book book = reservation.getBook();
+        bookManagerService.increaseStock(book.getId(), reservation.getQuantity());
+        logger.debug("Stock restored for book {}", book.getId());
+        
+        // Eliminar reserva
+        reservationDataService.deleteReservation(reservationId);
+        logger.debug("Reservation cancelled and deleted");
+        return true;
     }
     
     @Override
@@ -137,7 +119,15 @@ public class ReservationManager implements ReservationManagerService {
             return false;
         }
         
-        return cancelReservationInternal(reservation.getId());
+        // Restaurar stock
+        Book book = reservation.getBook();
+        bookManagerService.increaseStock(book.getId(), reservation.getQuantity());
+        logger.debug("Stock restored for book {}", book.getId());
+        
+        // Eliminar reserva
+        reservationDataService.deleteReservation(reservation.getId());
+        logger.debug("Reservation cancelled and deleted");
+        return true;
     }
     
     @Override
@@ -148,7 +138,9 @@ public class ReservationManager implements ReservationManagerService {
             if (item.isReserved()) {
                 Reservation res = getReservationByUserAndBook(username, item.getBookId());
                 if (res != null) {
-                    purchaseReservationInternal(res.getId());
+                    // Procesar compra de reserva
+                    reservationDataService.deleteReservation(res.getId());
+                    logger.debug("Reservation purchased and deleted. Stock remains reduced.");
                 }
             }
         }

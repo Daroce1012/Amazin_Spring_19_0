@@ -39,8 +39,7 @@ public class ReservationController {
                 return "redirect:showBooks";
                 
             } catch (Exception e) {
-                logger.error("Error reserving book {} for user {}", bookId, principal.getName(), e);
-                session.setAttribute("error", "error.general");
+                handleReservationError(e, session, null, "Error reserving book", true);
                 return "redirect:showBooks";
             }
         }
@@ -77,9 +76,7 @@ public class ReservationController {
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
-                logger.error("Error purchasing reservation {} for user {}", 
-                            reservationId, principal.getName(), e);
-                model.addAttribute("error", "error.general");
+                handleReservationError(e, null, model, "Error purchasing reservation", false);
                 return "redirect:myReservations";
             }
         }
@@ -100,11 +97,28 @@ public class ReservationController {
                 return "redirect:myReservations";
                 
             } catch (Exception e) {
-                logger.error("Error cancelling reservation {} for user {}", 
-                            reservationId, principal.getName(), e);
-                model.addAttribute("error", "error.general");
+                handleReservationError(e, null, model, "Error cancelling reservation", false);
                 return "redirect:myReservations";
             }
+        }
+    }
+    
+    // Método privado auxiliar - Maneja errores estándar de reservas
+    private void handleReservationError(Exception e, HttpSession session, Model model, String logMessage, boolean useSession) {
+        logger.error(logMessage, e);
+        
+        String errorMsg = e.getMessage();
+        String errorKey = "error.general";
+        
+        // Si el mensaje es una clave de internacionalización válida, usarla
+        if (errorMsg != null && (errorMsg.startsWith("reservation.") || errorMsg.startsWith("cart.") || errorMsg.startsWith("error."))) {
+            errorKey = errorMsg;
+        }
+        
+        if (useSession) {
+            session.setAttribute("error", errorKey);
+        } else {
+            model.addAttribute("error", errorKey);
         }
     }
 }
