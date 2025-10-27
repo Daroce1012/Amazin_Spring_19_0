@@ -10,13 +10,17 @@
 4. [Requisito 2: Sistema de Reservas](#requisito-2-sistema-de-reservas)
 5. [Requisito 3: Internacionalización](#requisito-3-internacionalización)
 6. [Arquitectura General](#arquitectura-general)
-7. [Consideraciones Técnicas](#consideraciones-técnicas)
+7. [Conclusiones](#conclusiones)
 
 ---
 
 ## Introducción
 
-Este documento describe la implementación completa de las funcionalidades requeridas para el Trabajo 2 de la asignatura Arquitectura de Sitios Web del Máster en Ingeniería Web. La implementación se ha realizado respetando la arquitectura en capas del piloto original (Presentación → Negocio → Persistencia) y manteniendo los convenios de nombres establecidos.
+Este documento describe la implementación completa de las funcionalidades requeridas 
+para el Trabajo 2 de la asignatura Arquitectura de Sitios Web del Máster en Ingeniería 
+Web. La implementación se ha realizado respetando la arquitectura en capas del piloto 
+original (Presentación → Negocio → Persistencia) y manteniendo los convenios de nombres 
+establecidos.
 
 ---
 
@@ -34,34 +38,6 @@ La aplicación está desplegada en una máquina virtual y es accesible a través
 - **Puerto**: 8080
 - **Contexto**: /Amazin_Spring_19_0
 - **Base de Datos**: HSQLDB (hsql://localhost/amazin19)
-
-### Páginas Principales
-
-Una vez desplegada, puedes acceder a las siguientes funcionalidades:
-
-1. **Página de Login**: `http://156.35.95.57:8080/Amazin_Spring_19_0/`
-   - Autenticación de usuarios
-
-2. **Catálogo de Libros**: `http://156.35.95.57:8080/Amazin_Spring_19_0/private/showBooks`
-   - Visualización de libros disponibles
-   - Añadir libros al carrito
-   - Reservar libros
-
-3. **Carrito de Compra**: `http://156.35.95.57:8080/Amazin_Spring_19_0/private/viewCart`
-   - Ver contenido del carrito
-   - Gestionar items (comprar/eliminar)
-   - Realizar checkout
-
-4. **Mis Reservas**: `http://156.35.95.57:8080/Amazin_Spring_19_0/private/myReservations`
-   - Ver reservas activas
-   - Completar compra de reservas
-   - Cancelar reservas
-
-### Requisitos del Sistema
-
-- Navegador web moderno (Chrome, Firefox, Edge, Safari)
-- JavaScript habilitado
-- Conexión al servidor en el puerto 8080
 
 ---
 
@@ -86,15 +62,20 @@ public class Book {
 }
 ```
 
-**Persistencia:** El atributo `stock` se mapea automáticamente a la base de datos mediante JPA. La configuración de JPA está en `persistence.xml`:
+**Persistencia:** El atributo `stock` se mapea automáticamente a la base de datos 
+mediante JPA. La configuración de JPA está en `persistence.xml`:
 
 ```xml
-<property name="jakarta.persistence.schema-generation.database.action" value="update" />
+<property name="jakarta.persistence.schema-generation.database.action" 
+          value="update" />
 ```
 
-Esta propiedad permite que Hibernate actualice el esquema de la base de datos automáticamente al detectar el nuevo campo.
+Esta propiedad permite que Hibernate actualice el esquema de la base de datos 
+automáticamente al detectar el nuevo campo.
 
-**Inicialización:** Según el requisito, cada libro debe tener 10 unidades disponibles al despliegue. Esto se gestiona a través de scripts de inicialización de base de datos o mediante la inserción manual de los datos con valores de stock = 10.
+**Inicialización:** Según el requisito, cada libro debe tener 10 unidades disponibles 
+al despliegue. Esto se gestiona a través de scripts de inicialización de base de datos 
+o mediante la inserción manual de los datos con valores de stock = 10.
 
 ---
 
@@ -108,11 +89,14 @@ Se han creado dos clases principales para gestionar el carrito:
 public class Cart implements Serializable {
     private List<CartItem> items;
     
-    // Añade un item al carrito, incrementa cantidad si ya existe
-    public void addItem(Book book, int quantity, boolean isReserved);
+    // Añade un item al carrito, incrementa cantidad 
+    // si ya existe
+    public void addItem(Book book, int quantity, 
+                       boolean isReserved);
     
     // Busca un item por ID de libro y tipo (reserva o compra)
-    public CartItem findItemByBookId(int bookId, boolean isReserved);
+    public CartItem findItemByBookId(int bookId, 
+                                     boolean isReserved);
     
     // Elimina un item específico
     public void removeItem(int bookId, boolean isReserved);
@@ -130,12 +114,14 @@ public class Cart implements Serializable {
 public class CartItem implements Serializable {
     private Book book;
     private int quantity;
-    private boolean isReserved;  // Marca si es reserva o compra normal
+    private boolean isReserved;  // Reserva o compra normal
     
-    // Calcula el subtotal considerando si es reserva (95%) o compra (100%)
+    // Calcula el subtotal considerando si es reserva 
+    // (95%) o compra (100%)
     public double getSubtotal() {
         if (isReserved) {
-            return book.getPrice() * quantity * 0.95; // 95% restante
+            // 95% restante a pagar
+            return book.getPrice() * quantity * 0.95;
         }
         return book.getPrice() * quantity;
     }
@@ -174,19 +160,22 @@ public class CartItem implements Serializable {
 
 ```java
 @Override
-public void addBookToCart(Cart cart, int bookId, int quantity) throws Exception {
+public void addBookToCart(Cart cart, int bookId, int quantity) 
+        throws Exception {
     // 1. Obtener el libro con precio calculado
     Book book = bookManagerService.getBookById(bookId);
     
     // 2. Calcular cantidad total solicitada
     int totalRequested = quantity;
-    CartItem existingItem = cart.findItemByBookId(bookId, false);
+    CartItem existingItem = 
+        cart.findItemByBookId(bookId, false);
     if (existingItem != null) {
         totalRequested += existingItem.getQuantity();
     }
     
     // 3. Verificar stock disponible
-    if (!bookManagerService.checkStockAvailability(bookId, totalRequested)) {
+    if (!bookManagerService.checkStockAvailability(
+            bookId, totalRequested)) {
         throw new Exception("cart.notEnoughStock");
     }
     
@@ -198,16 +187,20 @@ public void addBookToCart(Cart cart, int bookId, int quantity) throws Exception 
 **Sincronización con Reservas:**
 ```java
 @Override
-public void synchronizeCartForUser(String username, Cart cart) throws Exception {
+public void synchronizeCartForUser(String username, Cart cart) 
+        throws Exception {
     // Obtener reservas del usuario desde BD
-    List<Reservation> reservations = reservationManagerService.getReservations(username);
+    List<Reservation> reservations = 
+        reservationManagerService.getReservations(username);
     
     // Eliminar todas las reservas del carrito
     cart.removeAllItems(true);
     
-    // Agregar todas las reservas desde BD (la BD es la fuente de verdad)
+    // Agregar todas las reservas desde BD 
+    // (la BD es la fuente de verdad)
     for (Reservation res : reservations) {
-        cart.addItem(res.getBook(), res.getQuantity(), true);
+        cart.addItem(res.getBook(), 
+                    res.getQuantity(), true);
     }
 }
 ```
@@ -215,15 +208,19 @@ public void synchronizeCartForUser(String username, Cart cart) throws Exception 
 **Proceso de Checkout:**
 ```java
 @Override
-public boolean checkout(String username, Cart cart) throws Exception {
+public boolean checkout(String username, Cart cart) 
+        throws Exception {
     // 1. Procesar reservas (eliminar de BD sin restaurar stock)
-    reservationManagerService.processReservationsInCart(username, cart);
+    reservationManagerService
+        .processReservationsInCart(username, cart);
     
     // 2. Procesar compras normales
     for (CartItem item : cart.getItems()) {
         if (!item.isReserved()) {
             // Reducir stock con validación en tiempo real
-            boolean reduced = bookManagerService.reduceStock(item.getBookId(), item.getQuantity());
+            boolean reduced = bookManagerService
+                .reduceStock(item.getBookId(), 
+                           item.getQuantity());
             if (!reduced) {
                 return false; // Stock insuficiente
             }
@@ -243,17 +240,22 @@ public boolean checkout(String username, Cart cart) throws Exception {
 
 ```java
 @Override
-public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
-    return bookDataService.checkStockAvailability(bookId, requestedQuantity);
+public boolean checkStockAvailability(int bookId, 
+                                     int requestedQuantity) 
+        throws Exception {
+    return bookDataService
+        .checkStockAvailability(bookId, requestedQuantity);
 }
 
 @Override
-public boolean reduceStock(int bookId, int quantity) throws Exception {
+public boolean reduceStock(int bookId, int quantity) 
+        throws Exception {
     return bookDataService.reduceStock(bookId, quantity);
 }
 
 @Override
-public boolean increaseStock(int bookId, int quantity) throws Exception {
+public boolean increaseStock(int bookId, int quantity) 
+        throws Exception {
     bookDataService.increaseBookStock(bookId, quantity);
     return true;
 }
@@ -265,16 +267,19 @@ public boolean increaseStock(int bookId, int quantity) throws Exception {
 **Verificación de Stock:**
 ```java
 @Override
-public boolean checkStockAvailability(int bookId, int requestedQuantity) throws Exception {
+public boolean checkStockAvailability(int bookId, int requestedQuantity) 
+        throws Exception {
     Dba dba = new Dba(true); // Solo lectura
     try {
         EntityManager em = dba.getActiveEm();
         Book book = em.find(Book.class, bookId);
         
         if (book != null) {
-            boolean available = book.getStock() >= requestedQuantity;
-            logger.debug("Stock check: Requested=" + requestedQuantity + 
-                        ", Available=" + book.getStock());
+            boolean available = 
+                book.getStock() >= requestedQuantity;
+            logger.debug("Stock check: Requested={}, " +
+                        "Available={}", requestedQuantity, 
+                        book.getStock());
             return available;
         }
         return false;
@@ -287,14 +292,15 @@ public boolean checkStockAvailability(int bookId, int requestedQuantity) throws 
 **Reducción de Stock (con bloqueo pesimista):**
 ```java
 @Override
-public boolean reduceStock(int bookId, int quantity) throws Exception {
+public boolean reduceStock(int bookId, int quantity) 
+        throws Exception {
     Dba dba = new Dba();
     try {
         EntityManager em = dba.getActiveEm();
         
         // BLOQUEO PESIMISTA para evitar condiciones de carrera
         Book book = em.find(Book.class, bookId, 
-                           jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+                           LockModeType.PESSIMISTIC_WRITE);
         
         if (book != null && book.getStock() >= quantity) {
             book.setStock(book.getStock() - quantity);
@@ -311,20 +317,22 @@ public boolean reduceStock(int bookId, int quantity) throws Exception {
 **Incremento de Stock (restauración):**
 ```java
 @Override
-public void increaseBookStock(int bookId, int quantity) throws Exception {
+public void increaseBookStock(int bookId, int quantity) 
+        throws Exception {
     Dba dba = new Dba();
     try {
         EntityManager em = dba.getActiveEm();
         
         // Bloqueo pesimista para operación atómica
         Book book = em.find(Book.class, bookId, 
-                           jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+                           LockModeType.PESSIMISTIC_WRITE);
         
         if (book != null) {
             int newStock = book.getStock() + quantity;
             book.setStock(newStock);
             em.merge(book);
-            logger.debug("Stock increased: New stock=" + newStock);
+            logger.debug("Stock increased: New stock=" 
+                        + newStock);
         }
     } finally {
         dba.closeEm();
@@ -345,16 +353,18 @@ La actualización del stock se realiza en dos momentos:
 **Proceso de Checkout completo:**
 ```java
 @Override
-public boolean checkout(String username, Cart cart) throws Exception {
+public boolean checkout(String username, Cart cart) 
+        throws Exception {
     // Procesar reservas (ya redujeron stock al crearse)
-    reservationManagerService.processReservationsInCart(username, cart);
+    reservationManagerService
+        .processReservationsInCart(username, cart);
     
     // Procesar compras normales (reducir stock ahora)
     for (CartItem item : cart.getItems()) {
         if (!item.isReserved()) {
-            boolean reduced = bookManagerService.reduceStock(
-                item.getBookId(), item.getQuantity()
-            );
+            boolean reduced = bookManagerService
+                .reduceStock(item.getBookId(), 
+                           item.getQuantity());
             if (!reduced) {
                 return false;
             }
@@ -398,7 +408,8 @@ public class Reservation {
 }
 ```
 
-**Relación con Book:** Se establece una relación `@ManyToOne` con carga eager para que siempre se cargue el libro junto con la reserva, evitando problemas de lazy loading.
+**Relación con Book:** Se establece una relación `@ManyToOne` con carga eager para 
+que siempre se cargue el libro junto con la reserva, evitando problemas de lazy loading.
 
 ---
 
@@ -410,22 +421,26 @@ public class Reservation {
 
 ```java
 @RequestMapping("private/reserveBook")
-public String reserveBook(@RequestParam("bookId") int bookId, 
-                         @RequestParam("quantity") int quantity,
-                         Principal principal, HttpSession session) {
+public String reserveBook(
+        @RequestParam("bookId") int bookId, 
+        @RequestParam("quantity") int quantity,
+        Principal principal, HttpSession session) {
     
     synchronized (servletContext) {
         try {
             String username = principal.getName();
             
             // Toda la lógica encapsulada en el servicio
-            reservationManagerService.reserveBook(username, bookId, quantity);
+            reservationManagerService
+                .reserveBook(username, bookId, quantity);
             
-            session.setAttribute("message", "reservation.created");
+            session.setAttribute("message", 
+                               "reservation.created");
             return "redirect:showBooks";
             
         } catch (Exception e) {
-            handleReservationError(e, session, null, "Error reserving book", true);
+            handleReservationError(e, session, null, 
+                                  "Error reserving book", true);
             return "redirect:showBooks";
         }
     }
@@ -438,10 +453,14 @@ public String reserveBook(@RequestParam("bookId") int bookId,
 
 ```java
 @Override
-public Reservation reserveBook(String username, int bookId, int quantity) throws Exception {
-    // 1. Verificar si ya existe una reserva del usuario para este libro
-    Reservation existingReservation = getReservationByUserAndBook(username, bookId);
-    boolean isNewReservation = (existingReservation == null);
+public Reservation reserveBook(String username, int bookId, 
+                              int quantity) throws Exception {
+    // 1. Verificar si ya existe una reserva del 
+    // usuario para este libro
+    Reservation existingReservation = 
+        getReservationByUserAndBook(username, bookId);
+    boolean isNewReservation = 
+        (existingReservation == null);
     
     // 2. Si es nueva, validar que el libro existe
     if (isNewReservation) {
@@ -451,12 +470,15 @@ public Reservation reserveBook(String username, int bookId, int quantity) throws
         }
     }
     
-    // 3. Verificar y reducir stock (IMPORTANTE: reduce inmediatamente)
-    if (!bookManagerService.checkStockAvailability(bookId, quantity)) {
+    // 3. Verificar y reducir stock 
+    // (IMPORTANTE: reduce inmediatamente)
+    if (!bookManagerService
+            .checkStockAvailability(bookId, quantity)) {
         throw new Exception("reservation.notEnoughStock");
     }
     
-    boolean stockReduced = bookManagerService.reduceStock(bookId, quantity);
+    boolean stockReduced = bookManagerService
+        .reduceStock(bookId, quantity);
     if (!stockReduced) {
         throw new Exception("reservation.stockReductionFailed");
     }
@@ -466,20 +488,23 @@ public Reservation reserveBook(String username, int bookId, int quantity) throws
         
         if (isNewReservation) {
             // Crear nueva reserva
-            reservation = reservationDataService.createReservation(
-                username, bookId, quantity
-            );
+            reservation = reservationDataService
+                .createReservation(username, bookId, quantity);
         } else {
-            // Actualizar reserva existente (incrementar cantidad)
-            int newQuantity = existingReservation.getQuantity() + quantity;
+            // Actualizar reserva existente 
+            // (incrementar cantidad)
+            int newQuantity = 
+                existingReservation.getQuantity() + quantity;
             existingReservation.setQuantity(newQuantity);
-            reservation = reservationDataService.updateReservation(existingReservation);
+            reservation = reservationDataService
+                .updateReservation(existingReservation);
         }
         
         return reservation;
         
     } catch (Exception e) {
-        // Rollback: restaurar stock si falla la creación/actualización
+        // Rollback: restaurar stock si falla 
+        // la creación/actualización
         bookManagerService.increaseStock(bookId, quantity);
         throw e;
     }
@@ -487,9 +512,12 @@ public Reservation reserveBook(String username, int bookId, int quantity) throws
 ```
 
 **Características importantes:**
-- **Reducción inmediata de stock**: Al crear una reserva, el stock se reduce inmediatamente para que no esté disponible para otros usuarios
-- **Reservas acumulativas**: Si un usuario reserva el mismo libro varias veces, se incrementa la cantidad en lugar de crear múltiples reservas
-- **Rollback automático**: Si falla la creación de la reserva en BD, se restaura el stock automáticamente
+- **Reducción inmediata de stock**: Al crear una reserva, el stock se reduce 
+  inmediatamente para que no esté disponible para otros usuarios
+- **Reservas acumulativas**: Si un usuario reserva el mismo libro varias veces, 
+  se incrementa la cantidad en lugar de crear múltiples reservas
+- **Rollback automático**: Si falla la creación de la reserva en BD, se restaura 
+  el stock automáticamente
 
 ---
 
@@ -505,9 +533,11 @@ public class CartItem {
     // El subtotal se calcula según el tipo
     public double getSubtotal() {
         if (isReserved) {
-            return book.getPrice() * quantity * 0.95; // 95% pendiente
+            // 95% pendiente
+            return book.getPrice() * quantity * 0.95;
         }
-        return book.getPrice() * quantity; // 100% precio completo
+        // 100% precio completo
+        return book.getPrice() * quantity;
     }
 }
 ```
@@ -530,11 +560,14 @@ public class CartItem {
 ```
 
 #### Sincronización Automática
-Cada vez que un usuario accede a `viewCart`, el sistema sincroniza automáticamente las reservas desde la base de datos:
+Cada vez que un usuario accede a `viewCart`, el sistema sincroniza automáticamente 
+las reservas desde la base de datos:
 
 ```java
 @RequestMapping("private/viewCart")
-public String viewCart(Principal principal, HttpSession session, Model model) {
+public String viewCart(Principal principal, 
+                      HttpSession session, 
+                      Model model) {
     String username = principal.getName();
     Cart cart = getOrCreateCart(session);
     
@@ -551,7 +584,9 @@ public String viewCart(Principal principal, HttpSession session, Model model) {
 
 ### 2.4 Reducción de Stock en Reservas
 
-**Momento de reducción:** El stock se reduce **inmediatamente** al crear o incrementar una reserva, no al finalizar la compra. Esto garantiza que los libros reservados no estén disponibles para otros usuarios.
+**Momento de reducción:** El stock se reduce **inmediatamente** al crear o 
+incrementar una reserva, no al finalizar la compra. Esto garantiza que los libros 
+reservados no estén disponibles para otros usuarios.
 
 **Implementación en ReservationManager:**
 ```java
@@ -612,15 +647,22 @@ La vista muestra una tabla con:
         <td><c:out value="${reservation.book.author}" /></td>
         <td><c:out value="${reservation.book.price}" /> €</td>
         <td><c:out value="${reservation.quantity}" /></td>
-        <td><c:out value="${reservation.reservationPrice}" /> €</td>
-        <td><c:out value="${reservation.remainingAmount}" /> €</td>
+        <td>
+            <c:out value="${reservation.reservationPrice}" /> €
+        </td>
+        <td>
+            <c:out value="${reservation.remainingAmount}" /> €
+        </td>
         <td>
             <form action="purchaseReservation" method="post">
-                <input type="hidden" name="reservationId" value="${reservation.id}"/>
+                <input type="hidden" name="reservationId" 
+                       value="${reservation.id}"/>
                 <input type="submit" value="Comprar"/>
             </form>
-            <form action="cancelReservationFromPage" method="post">
-                <input type="hidden" name="reservationId" value="${reservation.id}"/>
+            <form action="cancelReservationFromPage" 
+                  method="post">
+                <input type="hidden" name="reservationId" 
+                       value="${reservation.id}"/>
                 <input type="submit" value="Eliminar"/>
             </form>
         </td>
@@ -635,20 +677,24 @@ La vista muestra una tabla con:
 #### Controlador
 ```java
 @RequestMapping("private/purchaseReservation")
-public String purchaseReservation(@RequestParam("reservationId") int reservationId,
-                                 Principal principal, Model model) {
+public String purchaseReservation(
+        @RequestParam("reservationId") int reservationId,
+        Principal principal, Model model) {
     synchronized (servletContext) {
         try {
             String username = principal.getName();
             
             // El servicio valida internamente la propiedad
-            reservationManagerService.purchaseReservation(reservationId, username);
+            reservationManagerService.purchaseReservation(
+                reservationId, username);
             
-            model.addAttribute("message", "reservation.purchased");
+            model.addAttribute("message", 
+                              "reservation.purchased");
             return "redirect:myReservations";
             
         } catch (Exception e) {
-            handleReservationError(e, null, model, "Error purchasing reservation", false);
+            handleReservationError(e, null, model, 
+                    "Error purchasing reservation", false);
             return "redirect:myReservations";
         }
     }
@@ -658,31 +704,39 @@ public String purchaseReservation(@RequestParam("reservationId") int reservation
 #### Lógica de Negocio
 ```java
 @Override
-public boolean purchaseReservation(int reservationId, String username) throws Exception {
+public boolean purchaseReservation(int reservationId, String username) 
+        throws Exception {
     // Obtener y validar propiedad
-    Reservation reservation = getReservationById(reservationId, username);
+    Reservation reservation = 
+        getReservationById(reservationId, username);
     
     // Procesar compra: eliminar reserva de BD
-    // El stock NO se restaura porque ya se había reducido al crear la reserva
-    reservationDataService.deleteReservation(reservationId);
+    // El stock NO se restaura porque ya se había reducido 
+    // al crear la reserva
+    reservationDataService
+        .deleteReservation(reservationId);
     
-    logger.debug("Reservation purchased. Stock remains reduced.");
+    logger.debug("Reservation purchased. " +
+                "Stock remains reduced.");
     return true;
 }
 ```
 
 **Validación de propiedad:**
 ```java
-private Reservation getReservationById(int reservationId, String username) throws Exception {
-    Reservation reservation = reservationDataService.getReservationById(reservationId);
+private Reservation getReservationById(int reservationId, String username) 
+        throws Exception {
+    Reservation reservation = 
+        reservationDataService.getReservationById(reservationId);
     
     if (reservation == null) {
         throw new Exception("reservation.notFound");
     }
     
     if (!reservation.getUsername().equals(username)) {
-        logger.warn("User {} tried to access reservation {} belonging to {}", 
-                   username, reservationId, reservation.getUsername());
+        logger.warn("User {} tried to access reservation {} " +
+                   "belonging to {}", username, reservationId, 
+                   reservation.getUsername());
         throw new Exception("reservation.accessDenied");
     }
     
@@ -697,20 +751,24 @@ private Reservation getReservationById(int reservationId, String username) throw
 #### Controlador
 ```java
 @RequestMapping("private/cancelReservationFromPage")
-public String cancelReservationFromPage(@RequestParam("reservationId") int reservationId,
-                                       Principal principal, Model model) {
+public String cancelReservationFromPage(
+        @RequestParam("reservationId") int reservationId,
+        Principal principal, Model model) {
     synchronized (servletContext) {
         try {
             String username = principal.getName();
             
             // El servicio valida internamente la propiedad
-            reservationManagerService.cancelReservation(reservationId, username);
+            reservationManagerService.cancelReservation(
+                reservationId, username);
             
-            model.addAttribute("message", "reservation.cancelled");
+            model.addAttribute("message", 
+                              "reservation.cancelled");
             return "redirect:myReservations";
             
         } catch (Exception e) {
-            handleReservationError(e, null, model, "Error cancelling reservation", false);
+            handleReservationError(e, null, model, 
+                    "Error cancelling reservation", false);
             return "redirect:myReservations";
         }
     }
@@ -720,13 +778,17 @@ public String cancelReservationFromPage(@RequestParam("reservationId") int reser
 #### Lógica de Negocio
 ```java
 @Override
-public boolean cancelReservation(int reservationId, String username) throws Exception {
+public boolean cancelReservation(int reservationId, String username) 
+        throws Exception {
     // Obtener y validar propiedad
-    Reservation reservation = getReservationById(reservationId, username);
+    Reservation reservation = 
+        getReservationById(reservationId, username);
     
-    // Restaurar stock (IMPORTANTE: devuelve las unidades al stock)
+    // Restaurar stock 
+    // (IMPORTANTE: devuelve las unidades al stock)
     Book book = reservation.getBook();
-    bookManagerService.increaseStock(book.getId(), reservation.getQuantity());
+    bookManagerService.increaseStock(
+        book.getId(), reservation.getQuantity());
     
     // Eliminar reserva
     reservationDataService.deleteReservation(reservationId);
@@ -748,15 +810,18 @@ public boolean cancelReservation(int reservationId, String username) throws Exce
 
 ```java
 @Override
-public Reservation createReservation(String username, int bookId, int quantity) throws Exception {
+public Reservation createReservation(String username, 
+        int bookId, int quantity) throws Exception {
     Dba dba = new Dba();
     try {
         EntityManager em = dba.getActiveEm();
         
-        // Obtener el Book en el MISMO contexto de persistencia
+        // Obtener el Book en el MISMO contexto 
+        // de persistencia
         Book book = em.find(Book.class, bookId);
         if (book == null) {
-            throw new Exception("Book not found: " + bookId);
+            throw new Exception("Book not found: " 
+                              + bookId);
         }
         
         // Crear la reserva
@@ -773,20 +838,23 @@ public Reservation createReservation(String username, int bookId, int quantity) 
 }
 
 @Override
-public List<Reservation> getReservationsByUsername(String username) throws Exception {
+public List<Reservation> getReservationsByUsername(String username) 
+        throws Exception {
     Dba dba = new Dba(true); // Solo lectura
     try {
         EntityManager em = dba.getActiveEm();
         
         TypedQuery<Reservation> query = em.createQuery(
-            "SELECT r FROM Reservation r WHERE r.username = :username ORDER BY r.id DESC", 
-            Reservation.class
-        );
+            "SELECT r FROM Reservation r " + 
+            "WHERE r.username = :username " +
+            "ORDER BY r.id DESC", 
+            Reservation.class);
         query.setParameter("username", username);
         
         List<Reservation> results = query.getResultList();
         
-        // Forzar carga de libros para evitar lazy loading issues
+        // Forzar carga de libros para evitar 
+        // lazy loading issues
         for (Reservation r : results) {
             r.getBook().getTitle();
         }
@@ -798,13 +866,16 @@ public List<Reservation> getReservationsByUsername(String username) throws Excep
 }
 
 @Override
-public Reservation updateReservation(Reservation reservation) throws Exception {
+public Reservation updateReservation(Reservation reservation) 
+        throws Exception {
     Dba dba = new Dba();
     try {
         EntityManager em = dba.getActiveEm();
         
-        // Obtener la reserva gestionada por este EntityManager
-        Reservation managed = em.find(Reservation.class, reservation.getId());
+        // Obtener la reserva gestionada por 
+        // este EntityManager
+        Reservation managed = em.find(Reservation.class, 
+                                     reservation.getId());
         if (managed == null) {
             throw new Exception("Reservation not found");
         }
@@ -843,20 +914,25 @@ public void deleteReservation(int id) throws Exception {
 En `servlet-context.xml`:
 
 ```xml
-<!-- Configuración de LocaleResolver para gestión de idiomas -->
-<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver">
+<!-- Configuración de LocaleResolver para idiomas -->
+<bean id="localeResolver" 
+  class=
+    "org.springframework.web.servlet.i18n.SessionLocaleResolver">
     <property name="defaultLocale" value="es" />
 </bean>
 ```
 
-**SessionLocaleResolver:** Almacena el idioma seleccionado en la sesión HTTP del usuario, manteniendo la preferencia durante toda la sesión.
+**SessionLocaleResolver:** Almacena el idioma seleccionado en la 
+sesión HTTP del usuario, manteniendo la preferencia durante toda 
+la sesión.
 
 #### Definición del MessageSource
 En `beans.xml`:
 
 ```xml
 <bean id="messageSource"
-      class="org.springframework.context.support.ResourceBundleMessageSource">
+  class=
+   "org.springframework.context.support.ResourceBundleMessageSource">
     <property name="basename" value="messages" />
     <property name="defaultEncoding" value="UTF-8" />
     <property name="fallbackToSystemLocale" value="false" />
@@ -864,9 +940,12 @@ En `beans.xml`:
 ```
 
 **Propiedades:**
-- `basename`: Nombre base de los archivos de propiedades (messages.properties, messages_en.properties)
-- `defaultEncoding`: UTF-8 para soportar caracteres especiales en español
-- `fallbackToSystemLocale`: false para usar siempre el idioma configurado, no el del sistema
+- `basename`: Nombre base de los archivos de propiedades 
+  (messages.properties, messages_en.properties)
+- `defaultEncoding`: UTF-8 para soportar caracteres especiales 
+  en español
+- `fallbackToSystemLocale`: false para usar siempre el idioma 
+  configurado, no el del sistema
 
 ---
 
@@ -927,13 +1006,19 @@ function changeLanguage(lang) {
 </script>
 
 <div style="text-align: right; padding: 10px; margin-bottom: 10px;">
-    <label for="languageSelect"><spring:message code="language.select"/>: </label>
+    <label for="languageSelect">
+        <spring:message code="language.select"/>: 
+    </label>
     <select id="languageSelect" onchange="changeLanguage(this.value)" 
             style="padding: 5px; font-size: 14px;">
-        <option value="es" ${pageContext.response.locale.language == 'es' ? 'selected' : ''}>
+        <option value="es" 
+                ${pageContext.response.locale.language == 'es' 
+                  ? 'selected' : ''}>
             Español
         </option>
-        <option value="en" ${pageContext.response.locale.language == 'en' ? 'selected' : ''}>
+        <option value="en" 
+                ${pageContext.response.locale.language == 'en' 
+                  ? 'selected' : ''}>
             English
         </option>
     </select>
@@ -941,9 +1026,11 @@ function changeLanguage(lang) {
 ```
 
 **Características:**
-- **Sin botones**: El cambio se realiza automáticamente al seleccionar un valor mediante el evento `onchange`
+- **Sin botones**: El cambio se realiza automáticamente al seleccionar un valor 
+  mediante el evento `onchange`
 - **Selección persistente**: El selector muestra el idioma actualmente activo
-- **Componente reutilizable**: Se incluye en todas las páginas mediante `<jsp:include>`
+- **Componente reutilizable**: Se incluye en todas las páginas mediante 
+  `<jsp:include>`
 
 ---
 
@@ -1050,25 +1137,27 @@ BASE DE DATOS
 ### Diagrama de Componentes
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   CAPA DE PRESENTACIÓN                   │
-│  CartController  │ ReservationController │ LanguageController│
-└──────────────┬───────────────┬──────────────────────────┘
-               │               │
-┌──────────────▼───────────────▼──────────────────────────┐
-│                    CAPA DE NEGOCIO                       │
-│  CartManager  │ ReservationManager │ BookManager         │
-└──────────────┬───────────────┬──────────────────────────┘
-               │               │
-┌──────────────▼───────────────▼──────────────────────────┐
-│                  CAPA DE PERSISTENCIA                    │
-│      BookDAO      │    ReservationDAO    │   VATDAO       │
-└──────────────┬───────────────┬──────────────────────────┘
-               │               │
-               ▼               ▼
-         ┌────────────────────────┐
-         │   BASE DE DATOS HSQLDB │
-         └────────────────────────┘
+┌──────────────────────────────────────────────┐
+│          CAPA DE PRESENTACIÓN                │
+│  CartController │ ReservationController      │
+│                 │ LanguageController         │
+└────────────┬────────────┬────────────────────┘
+             │            │
+┌────────────▼────────────▼────────────────────┐
+│            CAPA DE NEGOCIO                   │
+│  CartManager │ ReservationManager            │
+│              │ BookManager                   │
+└────────────┬────────────┬────────────────────┘
+             │            │
+┌────────────▼────────────▼────────────────────┐
+│         CAPA DE PERSISTENCIA                 │
+│  BookDAO │ ReservationDAO │ VATDAO           │
+└────────────┬────────────┬────────────────────┘
+             │            │
+             ▼            ▼
+      ┌──────────────────────┐
+      │ BASE DE DATOS HSQLDB │
+      └──────────────────────┘
 ```
 
 ---
@@ -1076,14 +1165,19 @@ BASE DE DATOS
 ### Responsabilidades por Capa
 
 #### Capa de Presentación
-- **Responsabilidad**: Gestionar peticiones HTTP, validación básica, control de sesión
-- **Componentes**: Controllers (CartController, ReservationController, LanguageController)
+- **Responsabilidad**: Gestionar peticiones HTTP, validación básica, 
+  control de sesión
+- **Componentes**: Controllers (CartController, ReservationController, 
+  LanguageController)
 - **No debe**: Contener lógica de negocio, acceder directamente a la BD
 
 #### Capa de Negocio
-- **Responsabilidad**: Lógica de negocio, validaciones complejas, coordinación entre DAOs
-- **Componentes**: Managers/Services (CartManager, ReservationManager, BookManager)
-- **No debe**: Gestionar peticiones HTTP, conocer detalles de implementación de persistencia
+- **Responsabilidad**: Lógica de negocio, validaciones complejas, 
+  coordinación entre DAOs
+- **Componentes**: Managers/Services (CartManager, ReservationManager, 
+  BookManager)
+- **No debe**: Gestionar peticiones HTTP, conocer detalles de implementación 
+  de persistencia
 
 #### Capa de Persistencia
 - **Responsabilidad**: Acceso a datos, operaciones CRUD, gestión de transacciones
@@ -1098,10 +1192,16 @@ Todas las dependencias se gestionan mediante **Spring IoC** con configuración X
 
 ```xml
 <!-- beans.xml -->
-<bean id="cartManagerService" class="com.miw.business.cartmanager.CartManager"/>
-<bean id="reservationManagerService" class="com.miw.business.reservationmanager.ReservationManager"/>
-<bean id="bookDataService" class="com.miw.persistence.book.BookDAO"/>
-<bean id="reservationDataService" class="com.miw.persistence.reservation.ReservationDAO"/>
+<bean id="cartManagerService" 
+      class="com.miw.business.cartmanager.CartManager"/>
+<bean id="reservationManagerService" 
+      class=
+      "com.miw.business.reservationmanager.ReservationManager"/>
+<bean id="bookDataService" 
+      class="com.miw.persistence.book.BookDAO"/>
+<bean id="reservationDataService" 
+      class=
+      "com.miw.persistence.reservation.ReservationDAO"/>
 ```
 
 **Inyección en Controladores:**
@@ -1122,221 +1222,6 @@ public class CartManager implements CartManagerService {
     @Autowired
     private ReservationManagerService reservationManagerService;
 }
-```
-
----
-
-## Consideraciones Técnicas
-
-### 5.1 Concurrencia y Sincronización
-
-#### Bloqueos Pesimistas en Base de Datos
-Para evitar condiciones de carrera en operaciones de stock:
-
-```java
-Book book = em.find(Book.class, bookId, 
-                   jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
-```
-
-**Ventajas:**
-- Garantiza atomicidad de operaciones
-- Previene lecturas sucias
-- Evita actualizaciones perdidas
-
-#### Sincronización con ServletContext
-Para operaciones críticas que requieren serialización:
-
-```java
-@RequestMapping("private/reserveBook")
-public String reserveBook(...) {
-    synchronized (servletContext) {
-        // Operación crítica
-    }
-}
-```
-
----
-
-### 5.2 Gestión de Sesiones
-
-#### Almacenamiento del Carrito
-El carrito se almacena en la sesión HTTP:
-
-```java
-HttpSession session = ...;
-Cart cart = (Cart) session.getAttribute("cart");
-if (cart == null) {
-    cart = new Cart();
-    session.setAttribute("cart", cart);
-}
-```
-
-#### Sincronización de Reservas
-Las reservas se almacenan en BD y se sincronizan con el carrito en cada vista:
-
-```java
-cartManagerService.synchronizeCartForUser(username, cart);
-```
-
-**Ventajas:**
-- La BD es la fuente de verdad
-- Consistencia entre sesiones
-- Resistencia a pérdida de sesión
-
----
-
-### 5.3 Manejo de Errores
-
-#### Excepciones con Claves de Internacionalización
-```java
-throw new Exception("cart.notEnoughStock");
-throw new Exception("reservation.notFound");
-throw new Exception("reservation.accessDenied");
-```
-
-#### Manejo Centralizado en Controladores
-```java
-private void handleCartError(Exception e, HttpSession session, Model model, 
-                            String logMessage, boolean useSession) {
-    logger.error(logMessage, e);
-    
-    String errorKey = "error.general";
-    if (errorMsg != null && errorMsg.startsWith("cart.")) {
-        errorKey = errorMsg;
-    }
-    
-    if (useSession) {
-        session.setAttribute("error", errorKey);
-    } else {
-        model.addAttribute("error", errorKey);
-    }
-}
-```
-
-#### Visualización en JSP
-```jsp
-<c:if test="${not empty sessionScope.error}">
-    <div style="background-color: #f8d7da; ...">
-        <spring:message code="${sessionScope.error}"/>
-    </div>
-    <c:remove var="error" scope="session"/>
-</c:if>
-```
-
----
-
-### 5.4 Transacciones
-
-#### Gestión con JPA
-Todas las operaciones de escritura se realizan dentro de transacciones:
-
-```java
-Dba dba = new Dba(); // Inicia transacción
-try {
-    EntityManager em = dba.getActiveEm();
-    // Operaciones de BD
-    // Commit automático al cerrar
-} catch (Exception e) {
-    // Rollback automático en caso de error
-    throw e;
-} finally {
-    dba.closeEm(); // Cierra EM y confirma/revierte transacción
-}
-```
-
-#### Operaciones de Solo Lectura
-```java
-Dba dba = new Dba(true); // Solo lectura, sin transacción
-```
-
----
-
-### 5.5 Seguridad
-
-#### Autenticación y Autorización
-Implementado con **Spring Security**:
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authorize -> authorize
-            .requestMatchers("/resources/**", "/changeLanguage").permitAll()
-            .requestMatchers("/private/**").authenticated()
-        );
-        return http.build();
-    }
-}
-```
-
-#### Validación de Propiedad
-En operaciones de reservas:
-
-```java
-if (!reservation.getUsername().equals(username)) {
-    throw new Exception("reservation.accessDenied");
-}
-```
-
-#### Protección CSRF
-Tokens CSRF en todos los formularios:
-
-```jsp
-<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-```
-
----
-
-### 5.6 Logging
-
-#### Configuración Log4j2
-Logging extensivo en todas las capas:
-
-```java
-Logger logger = LogManager.getLogger(this.getClass());
-
-logger.debug("Adding book {} to cart. Quantity: {}", bookId, quantity);
-logger.error("Error processing checkout", e);
-logger.warn("User {} tried to access reservation {}", username, reservationId);
-```
-
-**Niveles utilizados:**
-- **DEBUG**: Flujo normal de ejecución, valores de variables
-- **ERROR**: Excepciones y errores críticos
-- **WARN**: Situaciones anómalas no críticas
-
----
-
-### 5.7 Validaciones
-
-#### Validación de Stock
-```java
-if (!bookManagerService.checkStockAvailability(bookId, requestedQuantity)) {
-    throw new Exception("cart.notEnoughStock");
-}
-```
-
-#### Validación de Entidades
-```java
-if (book == null) {
-    throw new Exception("cart.bookNotFound");
-}
-
-if (reservation == null) {
-    throw new Exception("reservation.notFound");
-}
-```
-
-#### Validación en la Vista
-```jsp
-<c:if test="${book.stock > 0}">
-    <!-- Formulario de compra -->
-</c:if>
-<c:if test="${book.stock <= 0}">
-    <span style="color: red;">Sin stock</span>
-</c:if>
 ```
 
 ---
@@ -1367,140 +1252,15 @@ if (reservation == null) {
 - Más de 100 claves de traducción
 - Persistencia del idioma en sesión
 
-### Arquitectura Respetada
-
-- ✅ Separación en 3 capas (Presentación, Negocio, Persistencia)
-- ✅ Inyección de dependencias con Spring
-- ✅ Convenios de nombres del piloto original
-- ✅ Uso de interfaces para servicios
-- ✅ Gestión de transacciones con JPA
-- ✅ Configuración declarativa en XML
-
-### Calidad del Código
-
-- ✅ Logging extensivo en todas las capas
-- ✅ Manejo centralizado de excepciones
-- ✅ Validaciones en múltiples niveles
-- ✅ Código documentado y comentado
-- ✅ Métodos auxiliares privados para código limpio
-- ✅ Principio de responsabilidad única
-
 ### Aspectos Técnicos Destacables
 
-- **Bloqueos pesimistas** en operaciones de stock para garantizar consistencia
+- **Bloqueos pesimistas** en operaciones de stock para garantizar 
+  consistencia
 - **Sincronización con BD** en cada acceso al carrito
 - **Rollback automático** si falla la creación de reservas
 - **Validación de propiedad** en operaciones de reservas
 - **Mensajes internacionalizados** incluso en excepciones
 - **Protección CSRF** en todos los formularios
-
----
-
-## Anexo: Estructura de Archivos
-
-```
-src/main/java/com/miw/
-├── business/
-│   ├── bookmanager/
-│   │   ├── BookManager.java
-│   │   ├── BookManagerService.java
-│   │   └── BookManagerEJBService.java
-│   ├── cartmanager/
-│   │   ├── CartManager.java (NUEVO)
-│   │   └── CartManagerService.java (NUEVO)
-│   ├── reservationmanager/
-│   │   ├── ReservationManager.java (NUEVO)
-│   │   └── ReservationManagerService.java (NUEVO)
-│   └── ServicesFactory.java
-├── config/
-│   └── SecurityConfig.java
-├── model/
-│   ├── Book.java (MODIFICADO - stock)
-│   ├── Cart.java (NUEVO)
-│   ├── CartItem.java (NUEVO)
-│   ├── Reservation.java (NUEVO)
-│   ├── VAT.java
-│   └── LoginData.java
-├── persistence/
-│   ├── book/
-│   │   ├── BookDAO.java (MODIFICADO - stock methods)
-│   │   └── BookDataService.java (MODIFICADO)
-│   ├── reservation/
-│   │   ├── ReservationDAO.java (NUEVO)
-│   │   └── ReservationDataService.java (NUEVO)
-│   ├── vat/
-│   │   ├── VATDAO.java
-│   │   └── VATDataService.java
-│   └── Dba.java
-└── presentation/
-    ├── CartController.java (NUEVO)
-    ├── ReservationController.java (NUEVO)
-    ├── LanguageController.java (NUEVO)
-    ├── BookController.java
-    └── ...
-
-src/main/resources/
-├── messages.properties (NUEVO - español)
-├── messages_en.properties (NUEVO - inglés)
-├── log4j.properties
-└── META-INF/
-    └── persistence.xml (MODIFICADO)
-
-src/main/webapp/WEB-INF/
-├── views/
-│   ├── languageSelector.jsp (NUEVO)
-│   ├── login.jsp (MODIFICADO)
-│   └── private/
-│       ├── showBooks.jsp (MODIFICADO)
-│       ├── viewCart.jsp (NUEVO)
-│       ├── myReservations.jsp (NUEVO)
-│       ├── checkoutSuccess.jsp (NUEVO)
-│       └── ...
-└── spring/
-    ├── appServlet/
-    │   ├── servlet-context.xml (MODIFICADO - locale)
-    │   └── beans.xml (MODIFICADO - nuevos beans)
-    └── root-context.xml
-```
-
----
-
-## Información de Despliegue Final
-
-### Acceso a la Aplicación Desplegada
-
-La aplicación ha sido desplegada en un servidor Tomcat y está disponible en:
-
-**URL:** http://156.35.95.57:8080/Amazin_Spring_19_0/
-
-### Verificación de Funcionalidades
-
-Para verificar que todas las funcionalidades están operativas:
-
-1. **Sistema de Compra de Libros**:
-   - Acceder al catálogo: http://156.35.95.57:8080/Amazin_Spring_19_0/private/showBooks
-   - Añadir libros al carrito
-   - Verificar control de stock (no se puede añadir más unidades de las disponibles)
-   - Realizar checkout
-   - Comprobar que el stock se ha actualizado en la base de datos
-
-2. **Sistema de Reservas**:
-   - Reservar un libro desde el catálogo
-   - Acceder a "Mis Reservas": http://156.35.95.57:8080/Amazin_Spring_19_0/private/myReservations
-   - Verificar que aparece el 5% pagado y el 95% pendiente
-   - Comprobar integración con el carrito
-   - Probar las opciones "Comprar" y "Eliminar"
-
-3. **Internacionalización**:
-   - Cambiar el idioma usando el selector en cualquier página
-   - Verificar que todos los textos se actualizan (español/inglés)
-   - Comprobar que el idioma persiste durante la navegación
-
-### Datos de Prueba
-
-- **Stock inicial**: Cada libro tiene 10 unidades
-- **Número mínimo de libros**: 3 libros diferentes en el catálogo
-- **Usuarios**: Configurados según el sistema de autenticación de Spring Security
 
 ---
 
