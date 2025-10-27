@@ -1,6 +1,10 @@
 package com.miw.model;
 
-public class CartItem {
+import java.io.Serializable;
+
+public class CartItem implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private Book book;
     private int quantity;
     private boolean isReserved; // Solo necesitamos esta marca

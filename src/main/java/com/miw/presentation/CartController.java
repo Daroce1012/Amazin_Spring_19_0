@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpSession;
 import com.miw.business.cartmanager.CartManagerService;
 import com.miw.model.Cart;
+import com.miw.model.CartItem;
 import java.security.Principal;
 import org.apache.logging.log4j.*;
 
@@ -29,11 +31,11 @@ public class CartController {
         try {
             Cart cart = getOrCreateCart(session);
             cartManagerService.addBookToCart(cart, bookId, quantity);
+
             session.setAttribute(CART_ATTRIBUTE, cart);
-            
             session.setAttribute("message", "cart.bookAddedSuccessfully");
             return "redirect:showBooks";
-            
+
         } catch (Exception e) {
             handleCartError(e, session, model, "Error adding book to cart", true);
             return "redirect:showBooks";
@@ -49,8 +51,8 @@ public class CartController {
             
             // Sincronizar con reservas (todo encapsulado en el servicio)
             cartManagerService.synchronizeCartForUser(username, cart);
+
             session.setAttribute(CART_ATTRIBUTE, cart);
-            
             model.addAttribute("total", cart.getTotal());
             return "private/viewCart";
             
@@ -60,18 +62,19 @@ public class CartController {
         }
     }
     
-    @RequestMapping("private/removeFromCart")
-    public String removeFromCart(@RequestParam("bookId") int bookId,
+    @RequestMapping(value = "private/removeFromCart", method = RequestMethod.POST)
+    public String removeFromCart(@RequestParam("bookId") int bookId, 
+            @RequestParam("isReserved") boolean isReserved,
             Principal principal, HttpSession session, Model model) {
         
         try {
             String username = principal.getName();
             Cart cart = getOrCreateCart(session);
             
-            // Todo encapsulado en el servicio
-            cartManagerService.removeItemFromCart(username, cart, bookId);
+            // Todo encapsulado en el servicio, ahora especificando si es reserva o no
+            cartManagerService.removeItemFromCart(username, cart, bookId, isReserved);
+
             session.setAttribute(CART_ATTRIBUTE, cart);
-            
             model.addAttribute("message", "cart.itemRemoved");
             return "redirect:viewCart";
             
@@ -90,8 +93,8 @@ public class CartController {
             
             // Todo encapsulado en el servicio
             cartManagerService.clearCart(username, cart);
+
             session.setAttribute(CART_ATTRIBUTE, cart);
-            
             model.addAttribute("message", "cart.cartCleared");
             model.addAttribute("total", cart.getTotal());
             return "private/viewCart";
@@ -102,18 +105,18 @@ public class CartController {
         }
     }
     
-    @RequestMapping("private/purchaseItem")
+    @RequestMapping(value = "private/purchaseItem", method = RequestMethod.POST)
     public String purchaseItem(@RequestParam("bookId") int bookId,
+            @RequestParam("isReserved") boolean isReserved,
             Principal principal, HttpSession session) {
         
         try {
             String username = principal.getName();
             Cart cart = getOrCreateCart(session);
             
-            // Todo encapsulado en el servicio
-            cartManagerService.purchaseItem(username, cart, bookId);
+            // Todo encapsulado en el servicio, ahora especificando si es reserva o no
+            cartManagerService.purchaseItem(username, cart, bookId, isReserved);
             session.setAttribute(CART_ATTRIBUTE, cart);
-            
             session.setAttribute("message", "cart.itemPurchased");
             return "redirect:viewCart";
             

@@ -20,24 +20,6 @@ public class CartManager implements CartManagerService {
     @Autowired
     private ReservationManagerService reservationManagerService;
     
-    // Método privado - Busca un item y lanza excepción si no existe
-    private CartItem getItemFromCart(Cart cart, int bookId) throws Exception {
-        CartItem item = cart.findItemByBookId(bookId);
-        if (item == null) {
-            throw new Exception("cart.itemNotFound");
-        }
-        return item;
-    }
-    
-    // Método privado - Remueve item del carrito según su tipo
-    private void removeItemFromCartByType(Cart cart, int bookId, boolean isReserved) {
-        if (isReserved) {
-            cart.removeReservedItem(bookId);
-        } else {
-            cart.removeNonReservedItem(bookId);
-        }
-    }
-    
     // Método privado - Procesa la compra de un item (reserva o normal)
     private void processPurchaseForItem(String username, int bookId, int quantity, boolean isReserved) throws Exception {
         if (isReserved) {
@@ -82,7 +64,7 @@ public class CartManager implements CartManagerService {
         // 2. Calcular cantidad total solicitada (considerando lo que ya está en el carrito)
         // IMPORTANTE: Solo contar items NO reservados, porque las reservas ya redujeron stock
         int totalRequested = quantity;
-        CartItem existingItem = cart.findNonReservedItemByBookId(bookId);
+        CartItem existingItem = cart.findItemByBookId(bookId, false);
         if (existingItem != null) {
             totalRequested += existingItem.getQuantity();
         }
@@ -93,7 +75,7 @@ public class CartManager implements CartManagerService {
         }
         
         // 4. Añadir al carrito
-        cart.addItem(book, quantity);
+        cart.addItem(book, quantity, false);
         logger.debug("Book added to cart successfully");
     }
     
@@ -107,23 +89,12 @@ public class CartManager implements CartManagerService {
             
             logger.debug("Synchronizing cart with {} reservations", reservations.size());
             
-            // 1. Eliminar del carrito reservas que ya no existen en BD
-            cart.getItems().removeIf(item -> 
-                item.isReserved() && reservations.stream()
-                    .noneMatch(r -> r.getBook().getId() == item.getBookId())
-            );
+            // 1. Eliminar todas las reservas del carrito
+            cart.removeAllItems(true);
             
-            // 2. Agregar o actualizar reservas desde BD
+            // 2. Agregar todas las reservas desde BD (la BD es la fuente de verdad)
             for (Reservation res : reservations) {
-                CartItem existingItem = cart.findReservedItemByBookId(res.getBook().getId());
-                
-                if (existingItem != null) {
-                    // Actualizar cantidad desde BD (BD es la fuente de verdad)
-                    existingItem.setQuantity(res.getQuantity());
-                } else {
-                    // Añadir nueva reserva al carrito
-                    cart.getItems().add(new CartItem(res.getBook(), res.getQuantity(), true));
-                }
+                cart.addItem(res.getBook(), res.getQuantity(), true);
             }
             
             logger.debug("Cart synchronized successfully");
@@ -134,12 +105,15 @@ public class CartManager implements CartManagerService {
     }
     
     @Override
-    public void removeItemFromCart(String username, Cart cart, int bookId) throws Exception {
-        logger.debug("Removing item from cart: bookId={}, user={}", bookId, username);
+    public void removeItemFromCart(String username, Cart cart, int bookId, boolean isReserved) throws Exception {
+        logger.debug("Removing item from cart: bookId={}, isReserved={}, user={}", bookId, isReserved, username);
         
-        // Buscar el item en el carrito (lanza excepción si no existe)
-        CartItem itemToRemove = getItemFromCart(cart, bookId);
-        boolean isReserved = itemToRemove.isReserved();
+        // Buscar el item específico en el carrito (por ID y tipo)
+        CartItem itemToRemove = cart.findItemByBookId(bookId, isReserved);
+        
+        if (itemToRemove == null) {
+            throw new Exception("cart.itemNotFound");
+        }
         
         // Si es reserva, cancelarla en BD (restaura stock)
         if (isReserved) {
@@ -152,7 +126,7 @@ public class CartManager implements CartManagerService {
         }
         
         // Quitar del carrito
-        removeItemFromCartByType(cart, bookId, isReserved);
+        cart.removeItem(bookId, isReserved);
         
         logger.debug("Item removed from cart successfully");
     }
@@ -178,12 +152,16 @@ public class CartManager implements CartManagerService {
     }
     
     @Override
-    public void purchaseItem(String username, Cart cart, int bookId) throws Exception {
-        logger.debug("Purchasing item: bookId={}, user={}", bookId, username);
+    public void purchaseItem(String username, Cart cart, int bookId, boolean isReserved) throws Exception {
+        logger.debug("Purchasing item: bookId={}, isReserved={}, user={}", bookId, isReserved, username);
         
-        // Buscar el item en el carrito (lanza excepción si no existe)
-        CartItem itemToPurchase = getItemFromCart(cart, bookId);
-        boolean isReserved = itemToPurchase.isReserved();
+        // Buscar el item específico en el carrito (por ID y tipo)
+        CartItem itemToPurchase = cart.findItemByBookId(bookId, isReserved);
+        
+        if (itemToPurchase == null) {
+            throw new Exception("cart.itemNotFound");
+        }
+        
         int quantity = itemToPurchase.getQuantity();
         
         // Procesar la compra (maneja reservas y compras normales)
@@ -191,7 +169,7 @@ public class CartManager implements CartManagerService {
         processPurchaseForItem(username, bookId, quantity, isReserved);
         
         // Quitar del carrito
-        removeItemFromCartByType(cart, bookId, isReserved);
+        cart.removeItem(bookId, isReserved);
         
         logger.debug("Item purchased successfully");
     }

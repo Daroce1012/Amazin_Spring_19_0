@@ -92,16 +92,18 @@
 								<td><c:out value="${item.quantity}" /></td>
 								<td><c:out value="${String.format('%.2f', item.subtotal)}" /> &euro;</td>
 							<td>
-								<form action="purchaseItem" method="post" style="display:inline; margin-right: 5px;">
-									<input type="hidden" name="bookId" value="${item.bookId}"/>
-									<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-									<input type="submit" value="<spring:message code='cart.buyItem'/>"/>
-								</form>
-								<form action="removeFromCart" method="post" style="display:inline;">
-									<input type="hidden" name="bookId" value="${item.bookId}"/>
-									<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-									<input type="submit" value="<spring:message code='cart.remove'/>"/>
-								</form>
+							<form action="purchaseItem" method="post" style="display:inline; margin-right: 5px;">
+								<input type="hidden" name="bookId" value="${item.bookId}"/>
+								<input type="hidden" name="isReserved" value="${item.reserved}"/>
+								<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+								<input type="submit" value="<spring:message code='cart.buyItem'/>"/>
+							</form>
+							<form action="removeFromCart" method="post" style="display:inline;">
+								<input type="hidden" name="bookId" value="${item.bookId}"/>
+								<input type="hidden" name="isReserved" value="${item.reserved}"/>
+								<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+								<input type="submit" value="<spring:message code='cart.remove'/>"/>
+							</form>
 							</td>
 							</tr>
 						</c:forEach>
